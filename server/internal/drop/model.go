@@ -6,7 +6,7 @@ type ResourceType string
 
 const (
 	FileResource ResourceType = "file"
-	TextResource = "text"
+	TextResource              = "text"
 )
 
 type Resource struct {
@@ -14,8 +14,10 @@ type Resource struct {
 	Link string
 }
 
+type DropId string
+
 type Drop struct {
-	Id             string
+	Id             DropId
 	ExpirationDate time.Time
 	Resources      []Resource
 }

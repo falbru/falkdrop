@@ -8,7 +8,8 @@ import (
 )
 
 type DropRepository interface {
-	CreateDrop(id string, expirationDate time.Time, resources []Resource) error
+	CreateDrop(id DropId, expirationDate time.Time, resources []Resource) error
+	IsUniqueDropId(id DropId) (bool, error)
 }
 
 type PostgresDropRepository struct {
@@ -21,7 +22,18 @@ func NewPostgresDropRepository(conn *pgx.Conn) *PostgresDropRepository {
 	}
 }
 
-func (repository PostgresDropRepository) CreateDrop(id string, expirationDate time.Time, resources []Resource) error {
+func (repository PostgresDropRepository) IsUniqueDropId(id DropId) (bool, error) {
+	var dropWithIdExists bool
+
+	err := repository.conn.QueryRow(context.Background(), "SELECT EXISTS (SELECT 1 FROM drops WHERE id = $1)", id).Scan(dropWithIdExists)
+	if err != nil {
+		return false, err
+	}
+
+	return !dropWithIdExists, err
+}
+
+func (repository PostgresDropRepository) CreateDrop(id DropId, expirationDate time.Time, resources []Resource) error {
 	tx, err := repository.conn.Begin(context.Background())
 	if err != nil {
 		return err

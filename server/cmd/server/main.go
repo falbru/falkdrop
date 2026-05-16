@@ -20,7 +20,7 @@ func main() {
 	dropRepository := drop.NewPostgresDropRepository(store.Conn)
 	dropService := drop.NewDropService(dropRepository)
 
-	err := dropService.CreateDrop([]drop.ResourceType{ drop.FileResource, drop.FileResource })
+	err := dropService.CreateDrop([]drop.ResourceType{drop.FileResource, drop.FileResource})
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err.Error())
 	}
