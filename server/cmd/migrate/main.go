@@ -27,6 +27,7 @@ func main() {
 	}
 
 	store := db.NewPostgresStore()
+	defer store.Close()
 	if store == nil {
 		fmt.Fprintf(os.Stderr, "Error: Could not connect to database")
 		os.Exit(2)
