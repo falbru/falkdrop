@@ -1,4 +1,4 @@
-package db
+package migrations
 
 import (
 	"context"
@@ -12,8 +12,6 @@ import (
 
 	"github.com/jackc/pgx/v5"
 )
-
-const MIGRATIONS_DIRECTORY = "migrations/"
 
 type Migration struct {
 	filePath string
@@ -32,8 +30,8 @@ func (m SortedMigrations) Less(i, j int) bool {
 	return m[i].version < m[j].version
 }
 
-func InitMigrations(store *PostgresStore) error {
-	rows, err := store.conn.Query(context.Background(), `
+func InitMigrations(conn *pgx.Conn) error {
+	rows, err := conn.Query(context.Background(), `
 		SELECT EXISTS (
 		    SELECT 1
 		    FROM information_schema.tables
@@ -52,7 +50,7 @@ func InitMigrations(store *PostgresStore) error {
 	}
 
 	if !migrationTableExists {
-		_, err = store.conn.Exec(context.Background(), `
+		_, err = conn.Exec(context.Background(), `
 			CREATE TABLE schema_migrations (
 				version int PRIMARY KEY
 			);
@@ -67,14 +65,14 @@ func InitMigrations(store *PostgresStore) error {
 	return nil
 }
 
-func NeedsMigration(store *PostgresStore) (bool, error) {
-	dbMigrationVersion, err := GetMigrationVersion(store)
+func NeedsMigration(conn *pgx.Conn, migrationsDirectory string) (bool, error) {
+	dbMigrationVersion, err := GetMigrationVersion(conn)
 
 	if err != nil {
 		return false, err
 	}
 
-	migrationFiles, err := getMigrationFiles(MIGRATIONS_DIRECTORY)
+	migrationFiles, err := getMigrationFiles(migrationsDirectory)
 	if err != nil {
 		return false, err
 	}
@@ -82,14 +80,14 @@ func NeedsMigration(store *PostgresStore) (bool, error) {
 	return dbMigrationVersion < len(migrationFiles)-1, nil
 }
 
-func Migrate(store *PostgresStore) error {
-	dbMigrationVersion, err := GetMigrationVersion(store)
+func Migrate(conn *pgx.Conn, migrationsDirectory string) error {
+	dbMigrationVersion, err := GetMigrationVersion(conn)
 
 	if err != nil {
 		return err
 	}
 
-	migrationFiles, err := getMigrationFiles(MIGRATIONS_DIRECTORY)
+	migrationFiles, err := getMigrationFiles(migrationsDirectory)
 	if err != nil {
 		return err
 	}
@@ -101,7 +99,7 @@ func Migrate(store *PostgresStore) error {
 			continue
 		}
 
-		migrationErr = runMigrationFile(store, migration.filePath)
+		migrationErr = runMigrationFile(conn, migration.filePath)
 		if migrationErr != nil {
 			break
 		}
@@ -109,7 +107,7 @@ func Migrate(store *PostgresStore) error {
 		newMigrationVersion = migration.version
 	}
 
-	err = setMigrationVersion(store, newMigrationVersion)
+	err = setMigrationVersion(conn, newMigrationVersion)
 	if migrationErr != nil || err != nil {
 		return errors.Join(migrationErr, err)
 	}
@@ -117,9 +115,9 @@ func Migrate(store *PostgresStore) error {
 	return nil
 }
 
-func GetMigrationVersion(store *PostgresStore) (int, error) {
+func GetMigrationVersion(conn *pgx.Conn) (int, error) {
 	var dbMigrationVersion int
-	err := store.conn.QueryRow(context.Background(), "SELECT version FROM schema_migrations").Scan(&dbMigrationVersion)
+	err := conn.QueryRow(context.Background(), "SELECT version FROM schema_migrations").Scan(&dbMigrationVersion)
 
 	if err != nil {
 		return -1, err
@@ -178,13 +176,13 @@ func getMigrationFiles(migrationDirectory string) (SortedMigrations, error) {
 
 }
 
-func runMigrationFile(store *PostgresStore, filePath string) error {
+func runMigrationFile(conn *pgx.Conn, filePath string) error {
 	contents, err := os.ReadFile(filePath)
 	if err != nil {
 		return err
 	}
 
-	tx, err := store.conn.Begin(context.Background())
+	tx, err := conn.Begin(context.Background())
 	if err != nil {
 		return err
 	}
@@ -198,7 +196,7 @@ func runMigrationFile(store *PostgresStore, filePath string) error {
 	return err
 }
 
-func setMigrationVersion(store *PostgresStore, version int) error {
-	_, err := store.conn.Exec(context.Background(), "UPDATE schema_migrations SET version = $1;", version)
+func setMigrationVersion(conn *pgx.Conn, version int) error {
+	_, err := conn.Exec(context.Background(), "UPDATE schema_migrations SET version = $1;", version)
 	return err
 }

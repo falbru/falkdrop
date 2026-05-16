@@ -9,7 +9,7 @@ import (
 )
 
 type PostgresStore struct {
-	conn *pgx.Conn
+	Conn *pgx.Conn
 }
 
 func NewPostgresStore() *PostgresStore {
@@ -25,5 +25,5 @@ func NewPostgresStore() *PostgresStore {
 }
 
 func (store PostgresStore) Close() {
-	store.conn.Close(context.Background())
+	store.Conn.Close(context.Background())
 }

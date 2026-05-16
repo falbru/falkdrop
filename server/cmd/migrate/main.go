@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/falbru/falkdrop/internal/db"
+	"github.com/falbru/falkdrop/pkg/migrations"
 )
 
 func printHelp() {
@@ -14,6 +15,8 @@ Commands:
   check    Check if pending migrations exist (exit code 1 if yes, 0 if up-to-date, 2 if error occurred)
   up       Apply all pending migrations`)
 }
+
+const MIGRATIONS_DIRECTORY = "migrations/"
 
 func main() {
 	args := os.Args[1:]
@@ -29,11 +32,11 @@ func main() {
 		os.Exit(2)
 	}
 
-	db.InitMigrations(store)
+	migrations.InitMigrations(store.Conn)
 
 	switch args[0] {
 	case "check":
-		needsMigration, err := db.NeedsMigration(store)
+		needsMigration, err := migrations.NeedsMigration(store.Conn, MIGRATIONS_DIRECTORY)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: failed to check migrations: %v\n", err)
 			os.Exit(2)
@@ -43,26 +46,26 @@ func main() {
 		}
 		os.Exit(0)
 	case "up":
-		needsMigration, err := db.NeedsMigration(store)
+		needsMigration, err := migrations.NeedsMigration(store.Conn, MIGRATIONS_DIRECTORY)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: failed to check migrations: %v\n", err)
 			os.Exit(2)
 		}
 
 		if needsMigration {
-			initialVersion, err := db.GetMigrationVersion(store)
+			initialVersion, err := migrations.GetMigrationVersion(store.Conn)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error: failed to check initial migration version: %v\n", err)
 				os.Exit(2)
 			}
 
-			err = db.Migrate(store)
+			err = migrations.Migrate(store.Conn, MIGRATIONS_DIRECTORY)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error: failed to apply migrations: %v\n", err)
 				os.Exit(2)
 			}
 
-			finalVersion, err := db.GetMigrationVersion(store)
+			finalVersion, err := migrations.GetMigrationVersion(store.Conn)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error: failed to check final migration version: %v\n", err)
 				os.Exit(2)
