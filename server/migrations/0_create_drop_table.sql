@@ -12,5 +12,5 @@ CREATE TABLE resources (
 
 CREATE TABLE drops_resources (
   drop_id varchar(5) REFERENCES drops(id),
-  resources_link text REFERENCES resources(link)
+  resource_link text REFERENCES resources(link)
 );
