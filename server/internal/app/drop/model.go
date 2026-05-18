@@ -1,6 +1,10 @@
 package drop
 
-import "time"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type ResourceType string
 
@@ -9,9 +13,15 @@ const (
 	TextResource              = "text"
 )
 
+type ResourceId uuid.UUID
+
+func (resouceId ResourceId) String() string {
+	return uuid.UUID(resouceId).String()
+}
+
 type Resource struct {
+	Id   ResourceId
 	Type ResourceType
-	Link string
 }
 
 type DropId string

@@ -3,13 +3,29 @@ services:
     image: postgres
     restart: always
     environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: falkdrop
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD
+      - POSTGRES_DB
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/
+  garage:
+    image: dxflrs/garage:v2.3.0
+    environment:
+      - GARAGE_DEFAULT_ACCESS_KEY
+      - GARAGE_DEFAULT_SECRET_KEY
+      - GARAGE_DEFAULT_BUCKET
+      - GARAGE_RPC_SECRET
+    command: ["/garage", "server", "--single-node", "--default-bucket"]
+    restart: always
+    ports:
+      - "3900:3900"
+      - "3901:3901"
+      - "3902:3902"
+      - "3903:3903"
+    volumes:
+      - ./garage.toml:/etc/garage.toml
 
 volumes:
   postgres_data:

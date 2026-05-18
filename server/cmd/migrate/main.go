@@ -1,11 +1,13 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 
-	"github.com/falbru/falkdrop/internal/db"
+	"github.com/falbru/falkdrop/internal/storage/repository/postgres"
 	"github.com/falbru/falkdrop/pkg/migrations"
+	"github.com/jackc/pgx/v5"
 )
 
 func printHelp() {
@@ -26,18 +28,20 @@ func main() {
 		os.Exit(1)
 	}
 
-	store := db.NewPostgresStore()
-	defer store.Close()
-	if store == nil {
+	conn, err := pgx.Connect(context.Background(), os.Getenv("DATABASE_URL"))
+	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: Could not connect to database")
 		os.Exit(2)
 	}
 
-	migrations.InitMigrations(store.Conn)
+	repository := postgres.NewPostgresRepositoryFromConnection(conn)
+	defer repository.Close()
+
+	migrations.InitMigrations(conn)
 
 	switch args[0] {
 	case "check":
-		needsMigration, err := migrations.NeedsMigration(store.Conn, MIGRATIONS_DIRECTORY)
+		needsMigration, err := migrations.NeedsMigration(conn, MIGRATIONS_DIRECTORY)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: failed to check migrations: %v\n", err)
 			os.Exit(2)
@@ -47,26 +51,26 @@ func main() {
 		}
 		os.Exit(0)
 	case "up":
-		needsMigration, err := migrations.NeedsMigration(store.Conn, MIGRATIONS_DIRECTORY)
+		needsMigration, err := migrations.NeedsMigration(conn, MIGRATIONS_DIRECTORY)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: failed to check migrations: %v\n", err)
 			os.Exit(2)
 		}
 
 		if needsMigration {
-			initialVersion, err := migrations.GetMigrationVersion(store.Conn)
+			initialVersion, err := migrations.GetMigrationVersion(conn)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error: failed to check initial migration version: %v\n", err)
 				os.Exit(2)
 			}
 
-			err = migrations.Migrate(store.Conn, MIGRATIONS_DIRECTORY)
+			err = migrations.Migrate(conn, MIGRATIONS_DIRECTORY)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error: failed to apply migrations: %v\n", err)
 				os.Exit(2)
 			}
 
-			finalVersion, err := migrations.GetMigrationVersion(store.Conn)
+			finalVersion, err := migrations.GetMigrationVersion(conn)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error: failed to check final migration version: %v\n", err)
 				os.Exit(2)
