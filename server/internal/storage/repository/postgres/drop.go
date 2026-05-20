@@ -5,12 +5,14 @@ import (
 	"time"
 
 	"github.com/falbru/falkdrop/internal/app/drop"
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 )
 
-func (repository PostgresRepository) IsUniqueDropId(id drop.DropId) (bool, error) {
+func (repository PostgresRepository) IsUniqueDropId(ctx context.Context, id drop.DropId) (bool, error) {
 	var dropWithIdExists bool
 
-	err := repository.conn.QueryRow(context.Background(), "SELECT EXISTS (SELECT 1 FROM drops WHERE id = $1)", id).Scan(dropWithIdExists)
+	err := repository.conn.QueryRow(ctx, "SELECT EXISTS (SELECT 1 FROM drops WHERE id = $1)", id).Scan(dropWithIdExists)
 	if err != nil {
 		return false, err
 	}
@@ -18,30 +20,72 @@ func (repository PostgresRepository) IsUniqueDropId(id drop.DropId) (bool, error
 	return !dropWithIdExists, err
 }
 
-func (repository PostgresRepository) CreateResource(id drop.ResourceId, resourceType drop.ResourceType) error {
-	_, err := repository.conn.Exec(context.Background(), "INSERT INTO resources (id, type) VALUES ($1, $2);", id, resourceType)
+func (repository PostgresRepository) CreateResource(ctx context.Context, id drop.ResourceId, resourceType drop.ResourceType) error {
+	_, err := repository.conn.Exec(ctx, "INSERT INTO resources (id, type) VALUES ($1, $2);", id, resourceType)
 	return err
 }
 
-func (repository PostgresRepository) CreateDrop(id drop.DropId, expirationDate time.Time, resourceIds []drop.ResourceId) error {
-	tx, err := repository.conn.Begin(context.Background())
+func (repository PostgresRepository) CreateDrop(ctx context.Context, id drop.DropId, expirationDate time.Time, resourceIds []drop.ResourceId) error {
+	tx, err := repository.conn.Begin(ctx)
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback(context.Background())
+	defer tx.Rollback(ctx)
 
-	_, err = tx.Exec(context.Background(), "INSERT INTO drops (id, expiration_date) VALUES ($1, $2);", id, expirationDate)
+	_, err = tx.Exec(ctx, "INSERT INTO drops (id, expiration_date) VALUES ($1, $2);", id, expirationDate)
 	if err != nil {
 		return err
 	}
 
 	for _, resourceId := range resourceIds {
-		_, err = tx.Exec(context.Background(), "INSERT INTO drops_resources (drop_id, resource_id) VALUES ($1, $2);", id, resourceId)
+		_, err = tx.Exec(ctx, "UPDATE resources SET drop_id = $1 WHERE id = $2;", id, resourceId)
 		if err != nil {
 			return err
 		}
 	}
 
-	err = tx.Commit(context.Background())
+	err = tx.Commit(ctx)
 	return err
+}
+
+func (repository PostgresRepository) GetDropById(ctx context.Context, id drop.DropId) (*drop.Drop, error) {
+	var dropId string
+	var expirationDate time.Time
+	err := repository.conn.QueryRow(ctx, "SELECT id, expiration_date FROM drops WHERE id = $1", id).Scan(&dropId, &expirationDate)
+
+	if err != nil {
+		return nil, err
+	}
+
+	resources, err := repository.GetResourcesByDropId(ctx, id)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &drop.Drop{
+		Id:             drop.DropId(dropId),
+		ExpirationDate: expirationDate,
+		Resources:      resources,
+	}, err
+}
+
+func (repository PostgresRepository) GetResourcesByDropId(ctx context.Context, id drop.DropId) ([]drop.Resource, error) {
+	queryRows, err := repository.conn.Query(ctx, "SELECT id, type FROM resources WHERE drop_id = $1", id)
+	if err != nil {
+		return []drop.Resource{}, err
+	}
+
+	rows, err := pgx.CollectRows(queryRows, func(row pgx.CollectableRow) (drop.Resource, error) {
+		var resourceId uuid.UUID
+		var resourceType drop.ResourceType
+		err := row.Scan(&resourceId, &resourceType)
+
+		return drop.Resource{
+			Id:   drop.ResourceId(resourceId),
+			Type: resourceType,
+		}, err
+	})
+
+	return rows, err
 }

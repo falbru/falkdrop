@@ -7,11 +7,11 @@ import (
 	awsS3 "github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
-func NewGarageStore(bucket string) *S3Store {
-	cfg, err := config.LoadDefaultConfig(context.Background())
+func NewGarageStore(ctx context.Context, bucket string) (*S3Store, error) {
+	cfg, err := config.LoadDefaultConfig(ctx)
 
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
 	svc := awsS3.NewFromConfig(cfg, func(o *awsS3.Options) {
@@ -20,7 +20,8 @@ func NewGarageStore(bucket string) *S3Store {
 	})
 
 	return &S3Store{
+		svc,
 		awsS3.NewPresignClient(svc),
 		bucket,
-	}
+	}, nil
 }

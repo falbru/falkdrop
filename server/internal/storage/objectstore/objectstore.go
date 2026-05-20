@@ -1,5 +1,10 @@
 package objectstore
 
+import (
+	"context"
+)
+
 type ObjectStore interface {
-	NewUploadUrl(id string) (string, error)
+	NewUploadUrl(ctx context.Context, id string) (string, error)
+	GetDownloadUrl(ctx context.Context, id string) (string, error)
 }

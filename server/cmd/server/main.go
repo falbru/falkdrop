@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -10,28 +11,44 @@ import (
 )
 
 func main() {
-	fmt.Println("Hello World!")
-
-	repository, err := postgres.NewPostgresRepository()
+	repository, err := postgres.NewPostgresRepository(context.Background())
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: Could not connect to database\n")
+		fmt.Fprintf(os.Stderr, "Error: Could not connect to database: %s\n", err.Error())
 		os.Exit(1)
 	}
-	defer repository.Close()
+	defer repository.Close(context.Background())
 
-	objectStore := s3.NewGarageStore("drops")
+	objectStore, err := s3.NewS3Store(context.Background(), "falkdrop2")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: Could not connect to object store: %s\n", err.Error())
+		os.Exit(1)
+	}
 
 	dropService := drop.NewDropService(repository, objectStore)
 
 	resourceId, url, err := dropService.CreateResourceWithUploadLink(drop.FileResource)
 	if err != nil {
-		fmt.Fprint(os.Stderr, "Error: could not create presigned url: ", err.Error())
+		fmt.Fprintf(os.Stderr, "Error: could not create presigned url: %s\n", err.Error())
+		os.Exit(1)
 	}
 
 	fmt.Println(url)
 
-	err = dropService.CreateDrop([]drop.ResourceId{resourceId})
+	_, err = dropService.CreateDrop([]drop.ResourceId{resourceId})
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err.Error())
+		fmt.Fprintf(os.Stderr, "Error: create drop: %v\n", err.Error())
+		os.Exit(1)
+	}
+
+	dropWithResourceLinks, err := dropService.GetDropWithResourceLinks("xf0lx")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: get drop with resource links: %v\n", err.Error())
+		os.Exit(1)
+	}
+
+	fmt.Println(dropWithResourceLinks.Id)
+	fmt.Println(dropWithResourceLinks.ExpirationDate)
+	for _, resource := range dropWithResourceLinks.ResourceLinks {
+		fmt.Println(resource.Link)
 	}
 }

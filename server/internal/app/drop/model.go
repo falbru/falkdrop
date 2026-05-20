@@ -31,3 +31,14 @@ type Drop struct {
 	ExpirationDate time.Time
 	Resources      []Resource
 }
+
+type ResourceLink struct {
+	Type ResourceType
+	Link string
+}
+
+type DropWithResourceLinks struct {
+	Id             DropId
+	ExpirationDate time.Time
+	ResourceLinks  []ResourceLink
+}

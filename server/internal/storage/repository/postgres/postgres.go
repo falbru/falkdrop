@@ -16,8 +16,8 @@ func NewPostgresRepositoryFromConnection(conn *pgx.Conn) *PostgresRepository {
 	return &repository
 }
 
-func NewPostgresRepository() (*PostgresRepository, error) {
-	conn, err := pgx.Connect(context.Background(), os.Getenv("DATABASE_URL"))
+func NewPostgresRepository(ctx context.Context) (*PostgresRepository, error) {
+	conn, err := pgx.Connect(ctx, os.Getenv("DATABASE_URL"))
 	if err != nil {
 		return nil, err
 	}
@@ -25,6 +25,6 @@ func NewPostgresRepository() (*PostgresRepository, error) {
 	return NewPostgresRepositoryFromConnection(conn), nil
 }
 
-func (repository PostgresRepository) Close() {
-	repository.conn.Close(context.Background())
+func (repository PostgresRepository) Close(ctx context.Context) {
+	repository.conn.Close(ctx)
 }

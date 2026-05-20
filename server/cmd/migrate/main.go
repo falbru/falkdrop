@@ -35,7 +35,7 @@ func main() {
 	}
 
 	repository := postgres.NewPostgresRepositoryFromConnection(conn)
-	defer repository.Close()
+	defer repository.Close(context.Background())
 
 	migrations.InitMigrations(conn)
 
