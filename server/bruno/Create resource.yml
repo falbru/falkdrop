@@ -1,0 +1,21 @@
+info:
+  name: Create resource
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{baseURL}}/resource"
+  body:
+    type: json
+    data: |-
+      {
+        "resource_type": "file"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

@@ -3,9 +3,11 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 
 	"github.com/falbru/falkdrop/internal/app/drop"
+	"github.com/falbru/falkdrop/internal/handlers"
 	"github.com/falbru/falkdrop/internal/storage/objectstore/s3"
 	"github.com/falbru/falkdrop/internal/storage/repository/postgres"
 )
@@ -26,29 +28,12 @@ func main() {
 
 	dropService := drop.NewDropService(repository, objectStore)
 
-	resourceId, url, err := dropService.CreateResourceWithUploadLink(drop.FileResource)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: could not create presigned url: %s\n", err.Error())
-		os.Exit(1)
-	}
+	resourceHandler := handlers.NewResourceHandler(dropService)
+	dropHandler := handlers.NewDropHandler(dropService)
 
-	fmt.Println(url)
+	http.HandleFunc("POST /resource", resourceHandler.Create)
+	http.HandleFunc("POST /drop", dropHandler.Create)
+	http.HandleFunc("GET /drop/{dropId}", dropHandler.Get)
 
-	_, err = dropService.CreateDrop([]drop.ResourceId{resourceId})
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: create drop: %v\n", err.Error())
-		os.Exit(1)
-	}
-
-	dropWithResourceLinks, err := dropService.GetDropWithResourceLinks("xf0lx")
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: get drop with resource links: %v\n", err.Error())
-		os.Exit(1)
-	}
-
-	fmt.Println(dropWithResourceLinks.Id)
-	fmt.Println(dropWithResourceLinks.ExpirationDate)
-	for _, resource := range dropWithResourceLinks.ResourceLinks {
-		fmt.Println(resource.Link)
-	}
+	http.ListenAndServe(":8080", nil)
 }

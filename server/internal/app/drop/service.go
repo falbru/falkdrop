@@ -49,68 +49,112 @@ func (service DropService) genUniqueDropId() (DropId, error) {
 	return id, err
 }
 
-func (service DropService) CreateResourceWithUploadLink(resourceType ResourceType) (ResourceId, string, error) {
+func (service DropService) CreateResourceWithUploadUrl(resourceType ResourceType) (*ResourceWithUploadUrl, error) {
 	id := ResourceId(uuid.New())
 
 	err := service.repository.CreateResource(context.Background(), id, resourceType)
 	if err != nil {
-		return ResourceId(uuid.Nil), "", err
+		return nil, err
 	}
 
 	uploadUrl, err := service.objectStore.NewUploadUrl(context.Background(), id.String())
-	return id, uploadUrl, err
+	if err != nil {
+		return nil, err
+	}
+
+	return &ResourceWithUploadUrl{
+		Resource: Resource{
+			Id:   id,
+			Type: resourceType,
+		},
+		UploadUrl: uploadUrl,
+	}, nil
 }
 
-func (service DropService) CreateDrop(resourceIds []ResourceId) (DropId, error) {
+func (service DropService) CreateDrop(resourceIds []ResourceId) (*DropWithResourceDownloadUrls, error) {
 	id, err := service.genUniqueDropId()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	expirationDate := time.Now().Add(time.Hour * 24 * 30)
 
 	// TODO verify if resources are uploaded and not empty?
 
-	return id, service.repository.CreateDrop(context.Background(), id, expirationDate, resourceIds)
+	err = service.repository.CreateDrop(context.Background(), id, expirationDate, resourceIds)
+	if err != nil {
+		return nil, err
+	}
+
+	resources, err := service.repository.GetResourcesByIds(context.Background(), resourceIds)
+	if err != nil {
+		return nil, err
+	}
+
+	resourcesWithDownloadUrls, err := service.withDownloadUrls(resources)
+	if err != nil {
+		return nil, err
+	}
+
+	return &DropWithResourceDownloadUrls{
+		Id:             id,
+		ExpirationDate: expirationDate,
+		Resources:      resourcesWithDownloadUrls,
+	}, nil
 }
 
-func (service DropService) GetDropWithResourceLinks(dropId DropId) (*DropWithResourceLinks, error) {
+func (service DropService) GetDropWithResourceDownloadUrls(dropId DropId) (*DropWithResourceDownloadUrls, error) {
 	drop, err := service.repository.GetDropById(context.Background(), dropId)
 	if err != nil {
 		return nil, err
 	}
 
 	resources, err := service.repository.GetResourcesByDropId(context.Background(), dropId)
+	if err != nil {
+		return nil, err
+	}
 
-	resourceLinks := make([]ResourceLink, len(resources))
+	resourcesWithDownloadUrls, err := service.withDownloadUrls(resources)
+	if err != nil {
+		return nil, err
+	}
+
+	return &DropWithResourceDownloadUrls{
+		Id:             drop.Id,
+		ExpirationDate: drop.ExpirationDate,
+		Resources:      resourcesWithDownloadUrls,
+	}, err
+}
+
+func (service DropService) withDownloadUrls(resources []Resource) ([]ResourceWithDownloadUrl, error) {
+	resourcesWithDownloadUrls := make([]ResourceWithDownloadUrl, len(resources))
 
 	var wg errgroup.Group
 	for i, resource := range resources {
 		wg.Go(func() error {
-			resourceLink, err := service.objectStore.GetDownloadUrl(context.Background(), resource.Id.String())
+			resourceWithDownloadUrl, err := service.objectStore.GetDownloadUrl(context.Background(), resource.Id.String())
 
 			if err != nil {
 				return err
 			}
 
-			resourceLinks[i] = ResourceLink{
-				Type: resource.Type,
-				Link: resourceLink,
+			resourcesWithDownloadUrls[i] = ResourceWithDownloadUrl{
+				Resource: Resource{
+					Id:   resource.Id,
+					Type: resource.Type,
+				},
+				DownloadUrl: resourceWithDownloadUrl,
 			}
 
 			return nil
 		})
 	}
 
-	err = wg.Wait()
-
+	err := wg.Wait()
 	if err != nil {
-		return nil, err
+		return []ResourceWithDownloadUrl{}, err
 	}
 
-	return &DropWithResourceLinks{
-		Id:             drop.Id,
-		ExpirationDate: drop.ExpirationDate,
-		ResourceLinks:  resourceLinks,
-	}, err
+	return resourcesWithDownloadUrls, nil
+
 }

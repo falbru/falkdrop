@@ -89,3 +89,32 @@ func (repository PostgresRepository) GetResourcesByDropId(ctx context.Context, i
 
 	return rows, err
 }
+
+func (repository PostgresRepository) GetResourcesByIds(ctx context.Context, ids []drop.ResourceId) ([]drop.Resource, error) {
+	if len(ids) == 0 {
+		return []drop.Resource{}, nil
+	}
+
+	idUUIDs := make([]uuid.UUID, len(ids))
+	for i, id := range ids {
+		idUUIDs[i] = uuid.UUID(id)
+	}
+
+	queryRows, err := repository.conn.Query(ctx, "SELECT id, type FROM resources WHERE id = ANY($1)", idUUIDs)
+	if err != nil {
+		return []drop.Resource{}, err
+	}
+
+	rows, err := pgx.CollectRows(queryRows, func(row pgx.CollectableRow) (drop.Resource, error) {
+		var resourceId uuid.UUID
+		var resourceType drop.ResourceType
+		err := row.Scan(&resourceId, &resourceType)
+
+		return drop.Resource{
+			Id:   drop.ResourceId(resourceId),
+			Type: resourceType,
+		}, err
+	})
+
+	return rows, err
+}

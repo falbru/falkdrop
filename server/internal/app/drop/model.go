@@ -15,13 +15,18 @@ const (
 
 type ResourceId uuid.UUID
 
-func (resouceId ResourceId) String() string {
-	return uuid.UUID(resouceId).String()
+func (resourceId ResourceId) String() string {
+	return uuid.UUID(resourceId).String()
 }
 
 type Resource struct {
 	Id   ResourceId
 	Type ResourceType
+}
+
+type ResourceWithUploadUrl struct {
+	Resource
+	UploadUrl string
 }
 
 type DropId string
@@ -32,13 +37,13 @@ type Drop struct {
 	Resources      []Resource
 }
 
-type ResourceLink struct {
-	Type ResourceType
-	Link string
+type ResourceWithDownloadUrl struct {
+	Resource
+	DownloadUrl string
 }
 
-type DropWithResourceLinks struct {
+type DropWithResourceDownloadUrls struct {
 	Id             DropId
 	ExpirationDate time.Time
-	ResourceLinks  []ResourceLink
+	Resources      []ResourceWithDownloadUrl
 }

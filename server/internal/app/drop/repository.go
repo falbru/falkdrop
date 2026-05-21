@@ -10,5 +10,6 @@ type DropRepository interface {
 	CreateResource(ctx context.Context, id ResourceId, resourceType ResourceType) error
 	GetDropById(ctx context.Context, id DropId) (*Drop, error)
 	GetResourcesByDropId(ctx context.Context, id DropId) ([]Resource, error)
+	GetResourcesByIds(ctx context.Context, ids []ResourceId) ([]Resource, error)
 	IsUniqueDropId(ctx context.Context, id DropId) (bool, error)
 }
