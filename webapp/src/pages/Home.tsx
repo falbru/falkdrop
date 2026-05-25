@@ -8,6 +8,7 @@ const HomePage = () => {
       <div className="flex flex-col w-[500px]">
         <Input />
         <Button>Enter</Button>
+        <a href="/create">Create</a>
       </div>
     </>
   );

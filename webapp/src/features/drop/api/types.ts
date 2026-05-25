@@ -45,3 +45,24 @@ export const toDownloadableResource = (
     downloadURL: resource.download_url,
   };
 };
+
+export type APIDrop = {
+  id: string;
+  expiration_date: string;
+};
+
+export type APIDropWithDownloadableResources = APIDrop & {
+  resources: APIDownloadableResource[];
+};
+
+export const toDropWithDownloadableResources = (
+  drop: APIDropWithDownloadableResources,
+): DropWithDownloadableResources => {
+  return {
+    id: drop["id"],
+    expirationDate: new Date(drop["expiration_date"]),
+    resources: drop["resources"].map((resource) =>
+      toDownloadableResource(resource),
+    ),
+  };
+};
