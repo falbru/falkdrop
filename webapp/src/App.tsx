@@ -1,5 +1,14 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import CreateDropPage from "./pages/CreateDrop";
+
+const queryClient = new QueryClient();
+
 function App() {
-  return <h1 className="text-red-500">Hello World</h1>;
+  return (
+    <QueryClientProvider client={queryClient}>
+      <CreateDropPage />
+    </QueryClientProvider>
+  );
 }
 
 export default App;
