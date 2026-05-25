@@ -1,12 +1,13 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import CreateDropPage from "./pages/CreateDrop";
+import router from "./routes";
+import { RouterProvider } from "react-router/dom";
 
 const queryClient = new QueryClient();
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <CreateDropPage />
+      <RouterProvider router={router} />
     </QueryClientProvider>
   );
 }
