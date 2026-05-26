@@ -19,8 +19,9 @@ func NewResourceHandler(dropService *drop.DropService) *ResourceHandler {
 }
 
 type ResourceDTO struct {
-	Id   string `json:"id"`
-	Type string `json:"type"`
+	Id   string  `json:"id"`
+	Type string  `json:"type"`
+	Name *string `json:"name"`
 }
 
 type ResourceWithDownloadUrlDTO struct {
@@ -34,7 +35,8 @@ type ResourceWithUploadUrlDTO struct {
 }
 
 type CreateResourceRequest struct {
-	ResourceType string `json:"resource_type"`
+	ResourceType string  `json:"resource_type"`
+	Name         *string `json:"name"`
 }
 
 func (handler ResourceHandler) Create(w http.ResponseWriter, r *http.Request) {
@@ -60,7 +62,7 @@ func (handler ResourceHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resource, err := handler.dropService.CreateResourceWithUploadUrl(drop.ResourceType(requestBody.ResourceType))
+	resource, err := handler.dropService.CreateResourceWithUploadUrl(drop.ResourceType(requestBody.ResourceType), requestBody.Name)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		io.WriteString(w, err.Error())
@@ -71,6 +73,7 @@ func (handler ResourceHandler) Create(w http.ResponseWriter, r *http.Request) {
 		ResourceDTO: ResourceDTO{
 			Id:   resource.Id.String(),
 			Type: string(resource.Type),
+			Name: resource.Name,
 		},
 		UploadUrl: resource.UploadUrl,
 	}

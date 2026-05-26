@@ -20,8 +20,8 @@ func (repository PostgresRepository) IsUniqueDropId(ctx context.Context, id drop
 	return !dropWithIdExists, err
 }
 
-func (repository PostgresRepository) CreateResource(ctx context.Context, id drop.ResourceId, resourceType drop.ResourceType) error {
-	_, err := repository.conn.Exec(ctx, "INSERT INTO resources (id, type) VALUES ($1, $2);", id, resourceType)
+func (repository PostgresRepository) CreateResource(ctx context.Context, id drop.ResourceId, resourceType drop.ResourceType, name *string) error {
+	_, err := repository.conn.Exec(ctx, "INSERT INTO resources (id, type, name) VALUES ($1, $2, $3);", id, resourceType, name)
 	return err
 }
 
@@ -71,7 +71,7 @@ func (repository PostgresRepository) GetDropById(ctx context.Context, id drop.Dr
 }
 
 func (repository PostgresRepository) GetResourcesByDropId(ctx context.Context, id drop.DropId) ([]drop.Resource, error) {
-	queryRows, err := repository.conn.Query(ctx, "SELECT id, type FROM resources WHERE drop_id = $1", id)
+	queryRows, err := repository.conn.Query(ctx, "SELECT id, type, name FROM resources WHERE drop_id = $1", id)
 	if err != nil {
 		return []drop.Resource{}, err
 	}
@@ -79,11 +79,13 @@ func (repository PostgresRepository) GetResourcesByDropId(ctx context.Context, i
 	rows, err := pgx.CollectRows(queryRows, func(row pgx.CollectableRow) (drop.Resource, error) {
 		var resourceId uuid.UUID
 		var resourceType drop.ResourceType
-		err := row.Scan(&resourceId, &resourceType)
+		var resourceName *string
+		err := row.Scan(&resourceId, &resourceType, &resourceName)
 
 		return drop.Resource{
 			Id:   drop.ResourceId(resourceId),
 			Type: resourceType,
+			Name: resourceName,
 		}, err
 	})
 
@@ -100,7 +102,7 @@ func (repository PostgresRepository) GetResourcesByIds(ctx context.Context, ids 
 		idUUIDs[i] = uuid.UUID(id)
 	}
 
-	queryRows, err := repository.conn.Query(ctx, "SELECT id, type FROM resources WHERE id = ANY($1)", idUUIDs)
+	queryRows, err := repository.conn.Query(ctx, "SELECT id, type, name FROM resources WHERE id = ANY($1)", idUUIDs)
 	if err != nil {
 		return []drop.Resource{}, err
 	}
@@ -108,11 +110,13 @@ func (repository PostgresRepository) GetResourcesByIds(ctx context.Context, ids 
 	rows, err := pgx.CollectRows(queryRows, func(row pgx.CollectableRow) (drop.Resource, error) {
 		var resourceId uuid.UUID
 		var resourceType drop.ResourceType
-		err := row.Scan(&resourceId, &resourceType)
+		var resourceName *string
+		err := row.Scan(&resourceId, &resourceType, &resourceName)
 
 		return drop.Resource{
 			Id:   drop.ResourceId(resourceId),
 			Type: resourceType,
+			Name: resourceName,
 		}, err
 	})
 

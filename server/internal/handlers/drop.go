@@ -51,6 +51,7 @@ func (handler DropHandler) Get(w http.ResponseWriter, r *http.Request) {
 			ResourceDTO: ResourceDTO{
 				Id:   resource.Id.String(),
 				Type: string(resource.Type),
+				Name: resource.Name,
 			},
 			DownloadUrl: resource.DownloadUrl,
 		}
@@ -112,6 +113,7 @@ func (handler DropHandler) Create(w http.ResponseWriter, r *http.Request) {
 			ResourceDTO: ResourceDTO{
 				Id:   resource.Id.String(),
 				Type: string(resource.Type),
+				Name: resource.Name,
 			},
 			DownloadUrl: resource.DownloadUrl,
 		}

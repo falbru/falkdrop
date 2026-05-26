@@ -43,8 +43,9 @@ const GetDropPage = () => {
                     <a
                       href={res.downloadURL}
                       className="flex-1 truncate text-sm text-neutral-300 hover:text-neutral-100 underline decoration-neutral-600 underline-offset-2"
+                      download={res.name ?? res.id}
                     >
-                      {res.id}
+                      {res.name ?? res.id}
                     </a>
                     <Button
                       variant="ghost"

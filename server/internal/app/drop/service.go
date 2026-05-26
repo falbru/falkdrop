@@ -49,10 +49,10 @@ func (service DropService) genUniqueDropId() (DropId, error) {
 	return id, err
 }
 
-func (service DropService) CreateResourceWithUploadUrl(resourceType ResourceType) (*ResourceWithUploadUrl, error) {
+func (service DropService) CreateResourceWithUploadUrl(resourceType ResourceType, name *string) (*ResourceWithUploadUrl, error) {
 	id := ResourceId(uuid.New())
 
-	err := service.repository.CreateResource(context.Background(), id, resourceType)
+	err := service.repository.CreateResource(context.Background(), id, resourceType, name)
 	if err != nil {
 		return nil, err
 	}
@@ -66,6 +66,7 @@ func (service DropService) CreateResourceWithUploadUrl(resourceType ResourceType
 		Resource: Resource{
 			Id:   id,
 			Type: resourceType,
+			Name: name,
 		},
 		UploadUrl: uploadUrl,
 	}, nil
@@ -132,7 +133,12 @@ func (service DropService) withDownloadUrls(resources []Resource) ([]ResourceWit
 	var wg errgroup.Group
 	for i, resource := range resources {
 		wg.Go(func() error {
-			resourceWithDownloadUrl, err := service.objectStore.GetDownloadUrl(context.Background(), resource.Id.String())
+			resourceName := resource.Id.String()
+			if resource.Name != nil {
+				resourceName = *resource.Name
+			}
+
+			resourceWithDownloadUrl, err := service.objectStore.GetDownloadUrl(context.Background(), resource.Id.String(), resourceName)
 
 			if err != nil {
 				return err
@@ -142,6 +148,7 @@ func (service DropService) withDownloadUrls(resources []Resource) ([]ResourceWit
 				Resource: Resource{
 					Id:   resource.Id,
 					Type: resource.Type,
+					Name: resource.Name,
 				},
 				DownloadUrl: resourceWithDownloadUrl,
 			}

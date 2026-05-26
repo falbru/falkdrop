@@ -4,6 +4,7 @@ import { toUploadableResource, type APIUploadableResource } from "./types";
 
 type CreateResourceRequest = {
   resource_type: string;
+  name: string | null;
 };
 type CreateResourceResponse = APIUploadableResource;
 

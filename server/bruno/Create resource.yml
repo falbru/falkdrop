@@ -10,7 +10,8 @@ http:
     type: json
     data: |-
       {
-        "resource_type": "file"
+        "resource_type": "file",
+        "name": "test1"
       }
   auth: inherit
 

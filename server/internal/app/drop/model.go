@@ -22,6 +22,7 @@ func (resourceId ResourceId) String() string {
 type Resource struct {
 	Id   ResourceId
 	Type ResourceType
+	Name *string
 }
 
 type ResourceWithUploadUrl struct {

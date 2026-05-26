@@ -7,7 +7,7 @@ import (
 
 type DropRepository interface {
 	CreateDrop(ctx context.Context, id DropId, expirationDate time.Time, resourceIds []ResourceId) error
-	CreateResource(ctx context.Context, id ResourceId, resourceType ResourceType) error
+	CreateResource(ctx context.Context, id ResourceId, resourceType ResourceType, name *string) error
 	GetDropById(ctx context.Context, id DropId) (*Drop, error)
 	GetResourcesByDropId(ctx context.Context, id DropId) ([]Resource, error)
 	GetResourcesByIds(ctx context.Context, ids []ResourceId) ([]Resource, error)

@@ -2,6 +2,7 @@ package s3
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -44,10 +45,11 @@ func (store S3Store) NewUploadUrl(ctx context.Context, id string) (string, error
 	return req.URL, err
 }
 
-func (store S3Store) GetDownloadUrl(ctx context.Context, id string) (string, error) {
+func (store S3Store) GetDownloadUrl(ctx context.Context, id string, filename string) (string, error) {
 	req, err := store.presignClient.PresignGetObject(ctx, &awsS3.GetObjectInput{
-		Bucket: aws.String(store.bucket),
-		Key:    aws.String(id),
+		Bucket:                     aws.String(store.bucket),
+		Key:                        aws.String(id),
+		ResponseContentDisposition: aws.String(fmt.Sprintf("attachment; filename=\"%s\"", filename)),
 	}, func(opts *awsS3.PresignOptions) {
 		opts.Expires = time.Minute * 15
 	})

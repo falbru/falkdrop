@@ -10,6 +10,7 @@ export type LocalResource = {
 export type Resource = {
   id: string;
   type: ResourceType;
+  name: string | null;
 };
 
 export type DownloadableResource = Resource & {

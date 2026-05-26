@@ -2,11 +2,13 @@ import type {
   DownloadableResource,
   ResourceType,
   UploadableResource,
+  DropWithDownloadableResources,
 } from "../types";
 
 type APIResourceBase = {
   id: string;
   type: string;
+  name: string | null;
 };
 
 export type APIUploadableResource = APIResourceBase & {
@@ -32,6 +34,7 @@ export const toUploadableResource = (
   return {
     id: resource.id,
     type: toResourceType(resource.type),
+    name: resource.name,
     uploadURL: resource.upload_url,
   };
 };
@@ -42,6 +45,7 @@ export const toDownloadableResource = (
   return {
     id: resource.id,
     type: toResourceType(resource.type),
+    name: resource.name,
     downloadURL: resource.download_url,
   };
 };

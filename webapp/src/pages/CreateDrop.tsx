@@ -57,7 +57,7 @@ const CreateDropPage = () => {
                   key={res.id}
                   className="text-sm text-neutral-300 truncate max-w-full"
                 >
-                  {res.id}
+                  {res.name ?? res.id}
                 </li>
               ))}
             </ul>
