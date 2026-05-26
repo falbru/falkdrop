@@ -8,6 +8,7 @@ import (
 
 	"github.com/falbru/falkdrop/internal/app/drop"
 	"github.com/falbru/falkdrop/internal/handlers"
+	"github.com/falbru/falkdrop/internal/storage/objectstore"
 	"github.com/falbru/falkdrop/internal/storage/objectstore/s3"
 	"github.com/falbru/falkdrop/internal/storage/repository/postgres"
 
@@ -15,16 +16,41 @@ import (
 )
 
 func main() {
-	repository, err := postgres.NewPostgresRepository(context.Background())
+	repository, err := postgres.NewPostgresRepository(context.Background(), os.Getenv("DATABASE_URL"))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: Could not connect to database: %s\n", err.Error())
 		os.Exit(1)
 	}
 	defer repository.Close(context.Background())
 
-	objectStore, err := s3.NewS3Store(context.Background(), "falkdrop2")
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: Could not connect to object store: %s\n", err.Error())
+	var objectStore objectstore.ObjectStore
+	switch os.Getenv("OBJECTSTORE_PROVIDER") {
+	case "s3":
+		bucketName, isBucketNameSet := os.LookupEnv("S3_BUCKET")
+		if !isBucketNameSet {
+			fmt.Fprintf(os.Stderr, "Error: S3_BUCKET not set\n")
+			os.Exit(1)
+		}
+
+		objectStore, err = s3.NewS3Store(context.Background(), bucketName)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error: Could not connect to object store: %s\n", err.Error())
+			os.Exit(1)
+		}
+	case "garage":
+		bucketName, isBucketNameSet := os.LookupEnv("GARAGE_BUCKET")
+		if !isBucketNameSet {
+			fmt.Fprintf(os.Stderr, "Error: GARAGE_BUCKET not set\n")
+			os.Exit(1)
+		}
+
+		objectStore, err = s3.NewGarageStore(context.Background(), bucketName)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error: Could not connect to object store: %s\n", err.Error())
+			os.Exit(1)
+		}
+	default:
+		fmt.Fprintf(os.Stderr, "Error: OBJECTSTORE_PROVIDER set to invalid value")
 		os.Exit(1)
 	}
 

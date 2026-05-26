@@ -2,8 +2,6 @@ package postgres
 
 import (
 	"context"
-	"os"
-
 	"github.com/jackc/pgx/v5"
 )
 
@@ -16,8 +14,8 @@ func NewPostgresRepositoryFromConnection(conn *pgx.Conn) *PostgresRepository {
 	return &repository
 }
 
-func NewPostgresRepository(ctx context.Context) (*PostgresRepository, error) {
-	conn, err := pgx.Connect(ctx, os.Getenv("DATABASE_URL"))
+func NewPostgresRepository(ctx context.Context, url string) (*PostgresRepository, error) {
+	conn, err := pgx.Connect(ctx, url)
 	if err != nil {
 		return nil, err
 	}
