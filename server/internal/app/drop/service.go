@@ -2,6 +2,8 @@ package drop
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"math/rand"
 	"time"
 
@@ -73,6 +75,10 @@ func (service DropService) CreateResourceWithUploadUrl(resourceType ResourceType
 }
 
 func (service DropService) CreateDrop(resourceIds []ResourceId) (*DropWithResourceDownloadUrls, error) {
+	if len(resourceIds) == 0 {
+		return nil, errors.New("resourceIds can't be empty")
+	}
+
 	id, err := service.genUniqueDropId()
 	if err != nil {
 		return nil, err
@@ -82,12 +88,18 @@ func (service DropService) CreateDrop(resourceIds []ResourceId) (*DropWithResour
 
 	// TODO verify if resources are uploaded and not empty?
 
-	err = service.repository.CreateDrop(context.Background(), id, expirationDate, resourceIds)
+	resources, err := service.repository.GetResourcesByIds(context.Background(), resourceIds)
 	if err != nil {
 		return nil, err
 	}
 
-	resources, err := service.repository.GetResourcesByIds(context.Background(), resourceIds)
+	for _, resource := range resources {
+		if resource.DropId != nil {
+			return nil, errors.New(fmt.Sprintf("Resource '%v' already part of drop '%v'", resource.Id, resource.DropId))
+		}
+	}
+
+	err = service.repository.CreateDrop(context.Background(), id, expirationDate, resourceIds)
 	if err != nil {
 		return nil, err
 	}

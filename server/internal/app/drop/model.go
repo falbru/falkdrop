@@ -20,9 +20,10 @@ func (resourceId ResourceId) String() string {
 }
 
 type Resource struct {
-	Id   ResourceId
-	Type ResourceType
-	Name *string
+	Id     ResourceId
+	Type   ResourceType
+	Name   *string
+	DropId *DropId
 }
 
 type ResourceWithUploadUrl struct {

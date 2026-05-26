@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 
@@ -38,15 +39,22 @@ func (handler DropHandler) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	drop, err := handler.dropService.GetDropWithResourceDownloadUrls(drop.DropId(dropId))
+	d, err := handler.dropService.GetDropWithResourceDownloadUrls(drop.DropId(dropId))
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		var dropNotFoundError *drop.DropNotFound
+		if errors.As(err, &dropNotFoundError) {
+			w.WriteHeader(http.StatusNotFound)
+			io.WriteString(w, err.Error())
+			return
+		}
+
+		w.WriteHeader(http.StatusInternalServerError)
 		io.WriteString(w, err.Error())
 		return
 	}
 
-	resourcesWithDownloadUrls := make([]ResourceWithDownloadUrlDTO, len(drop.Resources))
-	for i, resource := range drop.Resources {
+	resourcesWithDownloadUrls := make([]ResourceWithDownloadUrlDTO, len(d.Resources))
+	for i, resource := range d.Resources {
 		resourcesWithDownloadUrls[i] = ResourceWithDownloadUrlDTO{
 			ResourceDTO: ResourceDTO{
 				Id:   resource.Id.String(),
@@ -58,8 +66,8 @@ func (handler DropHandler) Get(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := DropWithResourceDownloadUrls{
-		Id:             string(drop.Id),
-		ExpirationDate: drop.ExpirationDate.String(),
+		Id:             string(d.Id),
+		ExpirationDate: d.ExpirationDate.String(),
 		Resources:      resourcesWithDownloadUrls,
 	}
 
@@ -73,30 +81,22 @@ func (handler DropHandler) Get(w http.ResponseWriter, r *http.Request) {
 }
 
 func (handler DropHandler) Create(w http.ResponseWriter, r *http.Request) {
-	if r.Body == nil {
+	var req CreateDropRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
+		io.WriteString(w, err.Error())
 		return
 	}
-
 	defer r.Body.Close()
-	body, err := io.ReadAll(r.Body)
 
-	if err != nil {
+	if len(req.ResourceIds) == 0 {
 		w.WriteHeader(http.StatusBadRequest)
-		io.WriteString(w, err.Error())
+		io.WriteString(w, "resourceIds is empty")
 		return
 	}
 
-	var requestBody CreateDropRequest
-	err = json.Unmarshal(body, &requestBody)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		io.WriteString(w, err.Error())
-		return
-	}
-
-	resourceIds := make([]drop.ResourceId, len(requestBody.ResourceIds))
-	for i, resourceId := range requestBody.ResourceIds {
+	resourceIds := make([]drop.ResourceId, len(req.ResourceIds))
+	for i, resourceId := range req.ResourceIds {
 		resourceIds[i] = drop.ResourceId(resourceId)
 	}
 

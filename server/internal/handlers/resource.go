@@ -40,29 +40,15 @@ type CreateResourceRequest struct {
 }
 
 func (handler ResourceHandler) Create(w http.ResponseWriter, r *http.Request) {
-	if r.Body == nil {
+	var req CreateResourceRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
+		io.WriteString(w, err.Error())
 		return
 	}
-
-	body, err := io.ReadAll(r.Body)
 	defer r.Body.Close()
 
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		io.WriteString(w, err.Error())
-		return
-	}
-
-	var requestBody CreateResourceRequest
-	err = json.Unmarshal(body, &requestBody)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		io.WriteString(w, err.Error())
-		return
-	}
-
-	resource, err := handler.dropService.CreateResourceWithUploadUrl(drop.ResourceType(requestBody.ResourceType), requestBody.Name)
+	resource, err := handler.dropService.CreateResourceWithUploadUrl(drop.ResourceType(req.ResourceType), req.Name)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		io.WriteString(w, err.Error())

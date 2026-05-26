@@ -2,6 +2,8 @@ package postgres
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"time"
 
 	"github.com/falbru/falkdrop/internal/app/drop"
@@ -54,6 +56,9 @@ func (repository PostgresRepository) GetDropById(ctx context.Context, id drop.Dr
 	err := repository.conn.QueryRow(ctx, "SELECT id, expiration_date FROM drops WHERE id = $1", id).Scan(&dropId, &expirationDate)
 
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, &drop.DropNotFound{DropId: id}
+		}
 		return nil, err
 	}
 
