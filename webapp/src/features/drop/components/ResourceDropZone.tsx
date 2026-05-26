@@ -1,5 +1,5 @@
 import { DropZone, type DropItem } from "react-aria-components";
-import type { LocalResource } from "..";
+import type { LocalResource } from "../types";
 
 type ResourceDropZoneProps = {
   onDrop: (resource: LocalResource) => void;
@@ -33,8 +33,11 @@ const ResourceDropZone = (props: ResourceDropZoneProps) => {
       onDrop={(event) => {
         event.items.forEach((item) => handleItemOnDrop(item));
       }}
+      className="flex items-center justify-center bg-card p-4 w-full h-[250px] rounded-xl border-4 border-dashed border-border"
     >
-      <div slot="label">Drop or paste text or images here</div>
+      <div slot="label" className="text-neutral-700">
+        Drop files or paste text here
+      </div>
     </DropZone>
   );
 };

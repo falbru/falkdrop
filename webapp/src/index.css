@@ -1,1 +1,15 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Nova+Mono&display=swap");
 @import "tailwindcss";
+
+body {
+  @apply bg-neutral-950;
+  @apply text-neutral-300;
+  font-family: Inter;
+}
+
+@theme {
+  --color-background: var(--color-neutral-950);
+  --color-card: var(--color-neutral-900);
+  --color-border: var(--color-neutral-800);
+  --font-title: "Nova Mono", monospace;
+}
