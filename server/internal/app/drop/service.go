@@ -41,7 +41,12 @@ func (service DropService) genUniqueDropId() (DropId, error) {
 
 	var err error
 	for {
-		if exists, err := service.repository.IsUniqueDropId(context.Background(), id); exists && err == nil {
+		unique, err := service.repository.IsUniqueDropId(context.Background(), id)
+		if err != nil {
+			return "", err
+		}
+
+		if !unique {
 			id = genDropId()
 		} else {
 			break

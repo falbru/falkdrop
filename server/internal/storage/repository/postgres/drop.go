@@ -14,7 +14,7 @@ import (
 func (repository PostgresRepository) IsUniqueDropId(ctx context.Context, id drop.DropId) (bool, error) {
 	var dropWithIdExists bool
 
-	err := repository.conn.QueryRow(ctx, "SELECT EXISTS (SELECT 1 FROM drops WHERE id = $1)", id).Scan(dropWithIdExists)
+	err := repository.conn.QueryRow(ctx, "SELECT EXISTS (SELECT 1 FROM drops WHERE id = $1)", id).Scan(&dropWithIdExists)
 	if err != nil {
 		return false, err
 	}
