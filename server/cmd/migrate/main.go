@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/falbru/falkdrop/internal/storage/repository/postgres"
 	"github.com/falbru/falkdrop/pkg/migrations"
 	"github.com/jackc/pgx/v5"
 )
@@ -34,10 +33,11 @@ func main() {
 		os.Exit(2)
 	}
 
-	repository := postgres.NewPostgresRepositoryFromConnection(conn)
-	defer repository.Close(context.Background())
-
-	migrations.InitMigrations(conn)
+	err = migrations.InitMigrations(conn)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: Failed to initialize migrations")
+		os.Exit(2)
+	}
 
 	switch args[0] {
 	case "check":

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 	"sort"
 	"strconv"
@@ -159,7 +160,7 @@ func getMigrationFiles(migrationDirectory string) (SortedMigrations, error) {
 		}
 
 		migrationFiles = append(migrationFiles, Migration{
-			filePath: migrationDirectory + fileName,
+			filePath: filepath.Join(migrationDirectory, fileName),
 			version:  migrationVersion,
 		})
 	}
