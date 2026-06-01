@@ -3,7 +3,6 @@ package drop
 import (
 	"context"
 	"errors"
-	"fmt"
 	"math/rand"
 	"time"
 
@@ -98,9 +97,25 @@ func (service DropService) CreateDrop(resourceIds []ResourceId) (*DropWithResour
 		return nil, err
 	}
 
+	if len(resources) < len(resourceIds) {
+		idFound := make(map[ResourceId]bool, len(resources))
+		for _, resource := range resources {
+			idFound[resource.Id] = true
+		}
+
+		var invalidIds []ResourceId
+		for _, resourceId := range resourceIds {
+			if !idFound[resourceId] {
+				invalidIds = append(invalidIds, resourceId)
+			}
+		}
+
+		return nil, ErrResourcesNotFound{invalidIds}
+	}
+
 	for _, resource := range resources {
 		if resource.DropId != nil {
-			return nil, errors.New(fmt.Sprintf("Resource '%v' already part of drop '%v'", resource.Id, resource.DropId))
+			return nil, ErrResourceAlreadyBelongsToDrop{resource.Id, *resource.DropId}
 		}
 	}
 
@@ -127,12 +142,11 @@ func (service DropService) GetDropWithResourceDownloadUrls(dropId DropId) (*Drop
 		return nil, err
 	}
 
-	resources, err := service.repository.GetResourcesByDropId(context.Background(), dropId)
-	if err != nil {
-		return nil, err
+	if drop == nil {
+		return nil, ErrDropNotFound{dropId}
 	}
 
-	resourcesWithDownloadUrls, err := service.withDownloadUrls(resources)
+	resourcesWithDownloadUrls, err := service.withDownloadUrls(drop.Resources)
 	if err != nil {
 		return nil, err
 	}

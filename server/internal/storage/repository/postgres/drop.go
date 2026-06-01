@@ -57,7 +57,7 @@ func (repository PostgresRepository) GetDropById(ctx context.Context, id drop.Dr
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, &drop.DropNotFound{DropId: id}
+			return nil, nil
 		}
 		return nil, err
 	}

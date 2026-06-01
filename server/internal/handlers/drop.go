@@ -41,7 +41,7 @@ func (handler DropHandler) Get(w http.ResponseWriter, r *http.Request) {
 
 	d, err := handler.dropService.GetDropWithResourceDownloadUrls(drop.DropId(dropId))
 	if err != nil {
-		var dropNotFoundError *drop.DropNotFound
+		var dropNotFoundError *drop.ErrDropNotFound
 		if errors.As(err, &dropNotFoundError) {
 			w.WriteHeader(http.StatusNotFound)
 			io.WriteString(w, err.Error())
