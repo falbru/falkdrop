@@ -1,3 +1,5 @@
+import type { LocalResourceBody } from "../types";
+
 const uploadResource = async (
   uploadURL: string,
   body: LocalResourceBody,
