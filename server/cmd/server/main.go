@@ -6,8 +6,9 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/falbru/falkdrop/internal/api/handlers"
+	"github.com/falbru/falkdrop/internal/api/middleware"
 	"github.com/falbru/falkdrop/internal/app/drop"
-	"github.com/falbru/falkdrop/internal/handlers"
 	"github.com/falbru/falkdrop/internal/storage/objectstore"
 	"github.com/falbru/falkdrop/internal/storage/objectstore/s3"
 	"github.com/falbru/falkdrop/internal/storage/repository/postgres"
@@ -61,9 +62,9 @@ func main() {
 
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("POST /resource", resourceHandler.Create)
-	mux.HandleFunc("POST /drop", dropHandler.Create)
-	mux.HandleFunc("GET /drop/{dropId}", dropHandler.Get)
+	mux.HandleFunc("POST /resource", middleware.ErrorHandler(resourceHandler.Create))
+	mux.HandleFunc("POST /drop", middleware.ErrorHandler(dropHandler.Create))
+	mux.HandleFunc("GET /drop/{dropId}", middleware.ErrorHandler(dropHandler.Get))
 
 	c := cors.AllowAll()
 

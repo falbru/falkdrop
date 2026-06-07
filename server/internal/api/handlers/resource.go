@@ -2,9 +2,10 @@ package handlers
 
 import (
 	"encoding/json"
-	"io"
+	"fmt"
 	"net/http"
 
+	"github.com/falbru/falkdrop/internal/api/errors"
 	"github.com/falbru/falkdrop/internal/app/drop"
 )
 
@@ -39,20 +40,16 @@ type CreateResourceRequest struct {
 	Name         *string `json:"name"`
 }
 
-func (handler ResourceHandler) Create(w http.ResponseWriter, r *http.Request) {
+func (handler ResourceHandler) Create(w http.ResponseWriter, r *http.Request) error {
 	var req CreateResourceRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		io.WriteString(w, err.Error())
-		return
+		return httperror.New(http.StatusBadRequest, err.Error())
 	}
 	defer r.Body.Close()
 
 	resource, err := handler.dropService.CreateResourceWithUploadUrl(drop.ResourceType(req.ResourceType), req.Name)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		io.WriteString(w, err.Error())
-		return
+		return fmt.Errorf("failed to create resource: %w", err)
 	}
 
 	response := ResourceWithUploadUrlDTO{
@@ -67,7 +64,8 @@ func (handler ResourceHandler) Create(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(response)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+		return fmt.Errorf("failed to encode response: %w", err)
 	}
+
+	return nil
 }

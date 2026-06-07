@@ -3,9 +3,10 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
-	"io"
+	"fmt"
 	"net/http"
 
+	httperror "github.com/falbru/falkdrop/internal/api/errors"
 	"github.com/falbru/falkdrop/internal/app/drop"
 	"github.com/google/uuid"
 )
@@ -30,27 +31,21 @@ type CreateDropRequest struct {
 	ResourceIds []uuid.UUID `json:"resource_ids"`
 }
 
-func (handler DropHandler) Get(w http.ResponseWriter, r *http.Request) {
+func (handler DropHandler) Get(w http.ResponseWriter, r *http.Request) error {
 	dropId := r.PathValue("dropId")
 
 	if dropId == "" {
-		w.WriteHeader(http.StatusBadRequest)
-		io.WriteString(w, "dropId is required")
-		return
+		return httperror.New(http.StatusBadRequest, "dropId is required")
 	}
 
 	d, err := handler.dropService.GetDropWithResourceDownloadUrls(drop.DropId(dropId))
 	if err != nil {
 		var dropNotFoundError drop.ErrDropNotFound
 		if errors.As(err, &dropNotFoundError) {
-			w.WriteHeader(http.StatusNotFound)
-			io.WriteString(w, err.Error())
-			return
+			return httperror.NotFound(dropNotFoundError.Error())
 		}
 
-		w.WriteHeader(http.StatusInternalServerError)
-		io.WriteString(w, err.Error())
-		return
+		return fmt.Errorf("failed to get drop: %w", err)
 	}
 
 	resourcesWithDownloadUrls := make([]ResourceWithDownloadUrlDTO, len(d.Resources))
@@ -75,24 +70,22 @@ func (handler DropHandler) Get(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	err = json.NewEncoder(w).Encode(response)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+		return fmt.Errorf("failed to encode response: %s", err.Error())
 	}
+
+	return nil
 }
 
-func (handler DropHandler) Create(w http.ResponseWriter, r *http.Request) {
+func (handler DropHandler) Create(w http.ResponseWriter, r *http.Request) error {
 	var req CreateDropRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		io.WriteString(w, err.Error())
-		return
+		return httperror.New(http.StatusBadRequest, err.Error())
 	}
 	defer r.Body.Close()
 
 	if len(req.ResourceIds) == 0 {
 		w.WriteHeader(http.StatusBadRequest)
-		io.WriteString(w, "resourceIds is empty")
-		return
+		return httperror.New(http.StatusBadRequest, "resourceIds is empty")
 	}
 
 	resourceIds := make([]drop.ResourceId, len(req.ResourceIds))
@@ -102,9 +95,7 @@ func (handler DropHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	drop, err := handler.dropService.CreateDrop(resourceIds)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		io.WriteString(w, err.Error())
-		return
+		return fmt.Errorf("failed to create drop: %w", err)
 	}
 
 	resourcesWithDownloadUrls := make([]ResourceWithDownloadUrlDTO, len(drop.Resources))
@@ -130,7 +121,8 @@ func (handler DropHandler) Create(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	err = json.NewEncoder(w).Encode(response)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+		return fmt.Errorf("failed to encode response: %w", err)
 	}
+
+	return nil
 }
