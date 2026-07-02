@@ -12,16 +12,16 @@ import (
 )
 
 type DropHandler struct {
-	dropService *drop.DropService
+	dropService drop.DropService
 }
 
-func NewDropHandler(dropService *drop.DropService) *DropHandler {
+func NewDropHandler(dropService drop.DropService) *DropHandler {
 	return &DropHandler{
 		dropService: dropService,
 	}
 }
 
-type DropWithResourceDownloadUrls struct {
+type DropWithResourceDownloadUrlsDTO struct {
 	Id             string                       `json:"id"`
 	ExpirationDate string                       `json:"expiration_date"`
 	Resources      []ResourceWithDownloadUrlDTO `json:"resources"`
@@ -48,6 +48,10 @@ func (handler DropHandler) Get(w http.ResponseWriter, r *http.Request) error {
 		return fmt.Errorf("failed to get drop: %w", err)
 	}
 
+	if d == nil {
+		return httperror.NotFound(fmt.Sprintf("drop with dropId %v not found", dropId))
+	}
+
 	resourcesWithDownloadUrls := make([]ResourceWithDownloadUrlDTO, len(d.Resources))
 	for i, resource := range d.Resources {
 		resourcesWithDownloadUrls[i] = ResourceWithDownloadUrlDTO{
@@ -60,7 +64,7 @@ func (handler DropHandler) Get(w http.ResponseWriter, r *http.Request) error {
 		}
 	}
 
-	response := DropWithResourceDownloadUrls{
+	response := DropWithResourceDownloadUrlsDTO{
 		Id:             string(d.Id),
 		ExpirationDate: d.ExpirationDate.String(),
 		Resources:      resourcesWithDownloadUrls,
@@ -93,13 +97,21 @@ func (handler DropHandler) Create(w http.ResponseWriter, r *http.Request) error 
 		resourceIds[i] = drop.ResourceId(resourceId)
 	}
 
-	drop, err := handler.dropService.CreateDrop(resourceIds)
+	drp, err := handler.dropService.CreateDrop(resourceIds)
 	if err != nil {
+		var errResourcesNotFound drop.ErrResourcesNotFound
+		var errResourceAlreadyBelongsToDrop drop.ErrResourceAlreadyBelongsToDrop
+		if errors.As(err, &errResourcesNotFound) {
+			return httperror.NotFound(err.Error())
+		} else if errors.As(err, &errResourceAlreadyBelongsToDrop) {
+			return httperror.New(http.StatusBadRequest, err.Error())
+		}
+
 		return fmt.Errorf("failed to create drop: %w", err)
 	}
 
-	resourcesWithDownloadUrls := make([]ResourceWithDownloadUrlDTO, len(drop.Resources))
-	for i, resource := range drop.Resources {
+	resourcesWithDownloadUrls := make([]ResourceWithDownloadUrlDTO, len(drp.Resources))
+	for i, resource := range drp.Resources {
 		resourcesWithDownloadUrls[i] = ResourceWithDownloadUrlDTO{
 			ResourceDTO: ResourceDTO{
 				Id:   resource.Id.String(),
@@ -111,9 +123,9 @@ func (handler DropHandler) Create(w http.ResponseWriter, r *http.Request) error 
 	}
 
 	response :=
-		DropWithResourceDownloadUrls{
-			Id:             string(drop.Id),
-			ExpirationDate: drop.ExpirationDate.String(),
+		DropWithResourceDownloadUrlsDTO{
+			Id:             string(drp.Id),
+			ExpirationDate: drp.ExpirationDate.String(),
 			Resources:      resourcesWithDownloadUrls,
 		}
 

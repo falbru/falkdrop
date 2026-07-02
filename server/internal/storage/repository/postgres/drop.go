@@ -107,7 +107,7 @@ func (repository PostgresRepository) GetResourcesByIds(ctx context.Context, ids 
 		idUUIDs[i] = uuid.UUID(id)
 	}
 
-	queryRows, err := repository.conn.Query(ctx, "SELECT id, type, name FROM resources WHERE id = ANY($1)", idUUIDs)
+	queryRows, err := repository.conn.Query(ctx, "SELECT id, type, name, drop_id FROM resources WHERE id = ANY($1)", idUUIDs)
 	if err != nil {
 		return []drop.Resource{}, err
 	}
@@ -116,12 +116,14 @@ func (repository PostgresRepository) GetResourcesByIds(ctx context.Context, ids 
 		var resourceId uuid.UUID
 		var resourceType drop.ResourceType
 		var resourceName *string
-		err := row.Scan(&resourceId, &resourceType, &resourceName)
+		var resourceDropId *drop.DropId
+		err := row.Scan(&resourceId, &resourceType, &resourceName, &resourceDropId)
 
 		return drop.Resource{
-			Id:   drop.ResourceId(resourceId),
-			Type: resourceType,
-			Name: resourceName,
+			Id:     drop.ResourceId(resourceId),
+			Type:   resourceType,
+			Name:   resourceName,
+			DropId: resourceDropId,
 		}, err
 	})
 

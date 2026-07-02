@@ -10,10 +10,10 @@ import (
 )
 
 type ResourceHandler struct {
-	dropService *drop.DropService
+	dropService drop.DropService
 }
 
-func NewResourceHandler(dropService *drop.DropService) *ResourceHandler {
+func NewResourceHandler(dropService drop.DropService) *ResourceHandler {
 	return &ResourceHandler{
 		dropService: dropService,
 	}

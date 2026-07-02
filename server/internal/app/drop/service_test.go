@@ -12,7 +12,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func getService(repository dropMock.MockDropRepository, objectStore objectStoreMock.MockObjectStore) *drop.DropService {
+func getService(repository dropMock.MockDropRepository, objectStore objectStoreMock.MockObjectStore) drop.DropService {
 	return drop.NewDropService(
 		repository,
 		objectStore,

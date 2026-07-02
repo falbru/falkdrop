@@ -10,13 +10,13 @@ type HTTPError struct {
 	Code int
 }
 
-func New(code int, message string) *HTTPError {
-	return &HTTPError{
+func New(code int, message string) HTTPError {
+	return HTTPError{
 		error: errors.New(message),
 		Code:  code,
 	}
 }
 
-func NotFound(message string) *HTTPError {
+func NotFound(message string) HTTPError {
 	return New(http.StatusNotFound, message)
 }

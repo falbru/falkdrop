@@ -13,6 +13,10 @@ type MockDropRepository struct {
 	withCreateResourceFn func(ctx context.Context, id drop.ResourceId, resourceType drop.ResourceType, name *string) error
 }
 
+func NewMockDropRepository() MockDropRepository {
+	return MockDropRepository{}
+}
+
 func (repo MockDropRepository) CreateDrop(ctx context.Context, id drop.DropId, expirationDate time.Time, resourceIds []drop.ResourceId) error {
 	return nil
 }
@@ -44,10 +48,6 @@ func (repo MockDropRepository) GetResourcesByIds(ctx context.Context, ids []drop
 func (repo MockDropRepository) IsUniqueDropId(ctx context.Context, id drop.DropId) (bool, error) {
 	return true, nil
 
-}
-
-func NewMockDropRepository() MockDropRepository {
-	return MockDropRepository{}
 }
 
 func (repo MockDropRepository) WithGetResourcesByIds(fn func(ctx context.Context, ids []drop.ResourceId) ([]drop.Resource, error)) MockDropRepository {
