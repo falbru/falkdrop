@@ -2,8 +2,9 @@ import { useState } from "react";
 import { useNavigate } from "react-router";
 import Button from "../components/ui/Button";
 import Card from "../components/ui/Card";
-import useCreateResource from "../features/drop/hooks/useCreateResource";
-import useCreateDrop from "../features/drop/hooks/useCreateDrop";
+import { useAuthenticatedMutation } from "../features/auth/hooks";
+import createDrop from "../features/drop/api/createDrop";
+import createAndUploadResource from "../features/drop/api/createAndUploadResource";
 import ResourceDropZone from "../features/drop/components/ResourceDropZone";
 import type {
   DropWithDownloadableResources,
@@ -15,7 +16,11 @@ import { Plus } from "lucide-react";
 const CreateDropPage = () => {
   const [uploadedResources, setUploadedResources] = useState<Resource[]>([]);
 
-  const createResourceMutation = useCreateResource({
+  const createResourceMutation = useAuthenticatedMutation<
+    Resource,
+    LocalResource
+  >({
+    mutationFn: createAndUploadResource,
     onSuccess: (uploadedResource: Resource) => {
       setUploadedResources([...uploadedResources, uploadedResource]);
     },
@@ -26,7 +31,11 @@ const CreateDropPage = () => {
   };
 
   const navigate = useNavigate();
-  const createDropMutation = useCreateDrop({
+  const createDropMutation = useAuthenticatedMutation<
+    DropWithDownloadableResources,
+    { resource_ids: string[] }
+  >({
+    mutationFn: createDrop,
     onSuccess: (drop: DropWithDownloadableResources) => {
       navigate(`/${drop.id}`);
     },

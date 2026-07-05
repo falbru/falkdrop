@@ -10,11 +10,13 @@ type CreateResourceResponse = APIUploadableResource;
 
 const createResource = async (
   request: CreateResourceRequest,
+  token: string,
 ): Promise<UploadableResource> => {
   return fetch(`${API_URL}/resource`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify(request),
   }).then(async (response) => {

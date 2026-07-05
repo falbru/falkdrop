@@ -19,6 +19,6 @@ COPY --from=builder /migrate /migrate
 
 RUN apk --no-cache add ca-certificates
 
-EXPOSE 8080
+EXPOSE 8082
 
 CMD ["/server"]

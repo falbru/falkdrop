@@ -40,5 +40,8 @@ export function createKeycloakAuthProvider(): AuthProvider {
     isAuthenticated() {
       return keycloak.authenticated;
     },
+    getToken() {
+      return keycloak.token;
+    },
   };
 }

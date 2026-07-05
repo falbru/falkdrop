@@ -1,9 +1,11 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/falbru/falkdrop/internal/api/errors"
 	"github.com/falbru/falkdrop/internal/app/drop"
@@ -47,7 +49,10 @@ func (handler ResourceHandler) Create(w http.ResponseWriter, r *http.Request) er
 	}
 	defer r.Body.Close()
 
-	resource, err := handler.dropService.CreateResourceWithUploadUrl(drop.ResourceType(req.ResourceType), req.Name)
+	token := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
+	ctx := context.WithValue(context.Background(), "token", token)
+
+	resource, err := handler.dropService.CreateResourceWithUploadUrl(ctx, drop.ResourceType(req.ResourceType), req.Name)
 	if err != nil {
 		return fmt.Errorf("failed to create resource: %w", err)
 	}

@@ -26,7 +26,20 @@ services:
       - "3903:3903"
     volumes:
       - ./garage.toml:/etc/garage.toml
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.6.4
+    environment:
+      - KC_BOOTSTRAP_ADMIN_USERNAME=admin
+      - KC_BOOTSTRAP_ADMIN_PASSWORD=admin
+    ports:
+      - "8082:8082"
+    command:
+      - "start-dev"
+    volumes:
+      - "keycloak_data:/opt/jboss/keycloak/standalone/data/"
 
 volumes:
   postgres_data:
+    driver: local
+  keycloak_data:
     driver: local

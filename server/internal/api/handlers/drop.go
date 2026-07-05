@@ -1,10 +1,12 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 
 	httperror "github.com/falbru/falkdrop/internal/api/errors"
 	"github.com/falbru/falkdrop/internal/app/drop"
@@ -38,7 +40,7 @@ func (handler DropHandler) Get(w http.ResponseWriter, r *http.Request) error {
 		return httperror.New(http.StatusBadRequest, "dropId is required")
 	}
 
-	d, err := handler.dropService.GetDropWithResourceDownloadUrls(drop.DropId(dropId))
+	d, err := handler.dropService.GetDropWithResourceDownloadUrls(context.Background(), drop.DropId(dropId))
 	if err != nil {
 		var dropNotFoundError drop.ErrDropNotFound
 		if errors.As(err, &dropNotFoundError) {
@@ -97,7 +99,10 @@ func (handler DropHandler) Create(w http.ResponseWriter, r *http.Request) error 
 		resourceIds[i] = drop.ResourceId(resourceId)
 	}
 
-	drp, err := handler.dropService.CreateDrop(resourceIds)
+	token := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
+	ctx := context.WithValue(context.Background(), "token", token)
+
+	drp, err := handler.dropService.CreateDrop(ctx, resourceIds)
 	if err != nil {
 		var errResourcesNotFound drop.ErrResourcesNotFound
 		var errResourceAlreadyBelongsToDrop drop.ErrResourceAlreadyBelongsToDrop

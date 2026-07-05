@@ -6,26 +6,29 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/falbru/falkdrop/internal/app/auth"
 	"github.com/falbru/falkdrop/internal/storage/objectstore"
 	"github.com/google/uuid"
 	"golang.org/x/sync/errgroup"
 )
 
 type DropService interface {
-	CreateResourceWithUploadUrl(resourceType ResourceType, name *string) (*ResourceWithUploadUrl, error)
-	CreateDrop(resourceIds []ResourceId) (*DropWithResourceDownloadUrls, error)
-	GetDropWithResourceDownloadUrls(dropId DropId) (*DropWithResourceDownloadUrls, error)
+	CreateResourceWithUploadUrl(ctx context.Context, resourceType ResourceType, name *string) (*ResourceWithUploadUrl, error)
+	CreateDrop(ctx context.Context, resourceIds []ResourceId) (*DropWithResourceDownloadUrls, error)
+	GetDropWithResourceDownloadUrls(ctx context.Context, dropId DropId) (*DropWithResourceDownloadUrls, error)
 }
 
 type dropServiceImpl struct {
 	repository  DropRepository
 	objectStore objectstore.ObjectStore
+	authService *auth.AuthService
 }
 
-func NewDropService(repository DropRepository, objectStore objectstore.ObjectStore) DropService {
+func NewDropService(repository DropRepository, objectStore objectstore.ObjectStore, authService *auth.AuthService) DropService {
 	return &dropServiceImpl{
 		repository,
 		objectStore,
+		authService,
 	}
 }
 
@@ -41,12 +44,13 @@ func genDropId() DropId {
 	return DropId(id)
 }
 
-func (service dropServiceImpl) genUniqueDropId() (DropId, error) {
+func (service dropServiceImpl) genUniqueDropId(ctx context.Context) (DropId, error) {
 	id := genDropId()
 
 	var err error
 	for {
-		unique, err := service.repository.IsUniqueDropId(context.Background(), id)
+		unique, err := service.repository.IsUniqueDropId(ctx, id)
+
 		if err != nil {
 			return "", err
 		}
@@ -61,15 +65,21 @@ func (service dropServiceImpl) genUniqueDropId() (DropId, error) {
 	return id, err
 }
 
-func (service dropServiceImpl) CreateResourceWithUploadUrl(resourceType ResourceType, name *string) (*ResourceWithUploadUrl, error) {
+func (service dropServiceImpl) CreateResourceWithUploadUrl(ctx context.Context, resourceType ResourceType, name *string) (*ResourceWithUploadUrl, error) {
+	token := ctx.Value("token").(string)
+
+	if err := service.authService.Verify(ctx, token); err != nil {
+		return nil, err
+	}
+
 	id := ResourceId(uuid.New())
 
-	err := service.repository.CreateResource(context.Background(), id, resourceType, name)
+	err := service.repository.CreateResource(ctx, id, resourceType, name)
 	if err != nil {
 		return nil, err
 	}
 
-	uploadUrl, err := service.objectStore.NewUploadUrl(context.Background(), id.String())
+	uploadUrl, err := service.objectStore.NewUploadUrl(ctx, id.String())
 	if err != nil {
 		return nil, err
 	}
@@ -84,12 +94,18 @@ func (service dropServiceImpl) CreateResourceWithUploadUrl(resourceType Resource
 	}, nil
 }
 
-func (service dropServiceImpl) CreateDrop(resourceIds []ResourceId) (*DropWithResourceDownloadUrls, error) {
+func (service dropServiceImpl) CreateDrop(ctx context.Context, resourceIds []ResourceId) (*DropWithResourceDownloadUrls, error) {
+	token := ctx.Value("token").(string)
+
+	if err := service.authService.Verify(ctx, token); err != nil {
+		return nil, err
+	}
+
 	if len(resourceIds) == 0 {
 		return nil, errors.New("resourceIds can't be empty")
 	}
 
-	id, err := service.genUniqueDropId()
+	id, err := service.genUniqueDropId(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +114,7 @@ func (service dropServiceImpl) CreateDrop(resourceIds []ResourceId) (*DropWithRe
 
 	// TODO verify if resources are uploaded and not empty?
 
-	resources, err := service.repository.GetResourcesByIds(context.Background(), resourceIds)
+	resources, err := service.repository.GetResourcesByIds(ctx, resourceIds)
 	if err != nil {
 		return nil, err
 	}
@@ -125,12 +141,12 @@ func (service dropServiceImpl) CreateDrop(resourceIds []ResourceId) (*DropWithRe
 		}
 	}
 
-	err = service.repository.CreateDrop(context.Background(), id, expirationDate, resourceIds)
+	err = service.repository.CreateDrop(ctx, id, expirationDate, resourceIds)
 	if err != nil {
 		return nil, err
 	}
 
-	resourcesWithDownloadUrls, err := service.withDownloadUrls(resources)
+	resourcesWithDownloadUrls, err := service.withDownloadUrls(ctx, resources)
 	if err != nil {
 		return nil, err
 	}
@@ -142,8 +158,8 @@ func (service dropServiceImpl) CreateDrop(resourceIds []ResourceId) (*DropWithRe
 	}, nil
 }
 
-func (service dropServiceImpl) GetDropWithResourceDownloadUrls(dropId DropId) (*DropWithResourceDownloadUrls, error) {
-	drop, err := service.repository.GetDropById(context.Background(), dropId)
+func (service dropServiceImpl) GetDropWithResourceDownloadUrls(ctx context.Context, dropId DropId) (*DropWithResourceDownloadUrls, error) {
+	drop, err := service.repository.GetDropById(ctx, dropId)
 	if err != nil {
 		return nil, err
 	}
@@ -152,7 +168,7 @@ func (service dropServiceImpl) GetDropWithResourceDownloadUrls(dropId DropId) (*
 		return nil, ErrDropNotFound{dropId}
 	}
 
-	resourcesWithDownloadUrls, err := service.withDownloadUrls(drop.Resources)
+	resourcesWithDownloadUrls, err := service.withDownloadUrls(ctx, drop.Resources)
 	if err != nil {
 		return nil, err
 	}
@@ -164,7 +180,7 @@ func (service dropServiceImpl) GetDropWithResourceDownloadUrls(dropId DropId) (*
 	}, err
 }
 
-func (service dropServiceImpl) withDownloadUrls(resources []Resource) ([]ResourceWithDownloadUrl, error) {
+func (service dropServiceImpl) withDownloadUrls(ctx context.Context, resources []Resource) ([]ResourceWithDownloadUrl, error) {
 	resourcesWithDownloadUrls := make([]ResourceWithDownloadUrl, len(resources))
 
 	var wg errgroup.Group
@@ -175,7 +191,7 @@ func (service dropServiceImpl) withDownloadUrls(resources []Resource) ([]Resourc
 				resourceName = *resource.Name
 			}
 
-			resourceWithDownloadUrl, err := service.objectStore.GetDownloadUrl(context.Background(), resource.Id.String(), resourceName)
+			resourceWithDownloadUrl, err := service.objectStore.GetDownloadUrl(ctx, resource.Id.String(), resourceName)
 
 			if err != nil {
 				return err

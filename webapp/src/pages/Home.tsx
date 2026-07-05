@@ -4,10 +4,13 @@ import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
 import Card from "../components/ui/Card";
 import { Plus } from "lucide-react";
+import { useAuth } from "../features/auth/contexts/AuthProvider";
 
 const HomePage = () => {
   const [inputDropCode, setInputDropCode] = useState<string>("");
   const navigate = useNavigate();
+
+  const auth = useAuth();
 
   const handleEnter = () => {
     if (inputDropCode.length < 5) return;
@@ -47,19 +50,26 @@ const HomePage = () => {
             Enter
           </Button>
 
-          <div className="flex items-center gap-2 my-3">
-            <div className="flex-grow h-[1px] bg-neutral-700" />
-            <span className="text-sm text-neutral-500 uppercase">Or</span>
-            <div className="flex-grow h-[1px] bg-neutral-700" />
-          </div>
+          {auth.isAuthenticated() && (
+            <>
+              <div className="flex items-center gap-2 my-3">
+                <div className="flex-grow h-[1px] bg-neutral-700" />
+                <span className="text-sm text-neutral-500 uppercase">Or</span>
+                <div className="flex-grow h-[1px] bg-neutral-700" />
+              </div>
 
-          <div className="flex justify-center">
-            <Link to="/create">
-              <Button variant="secondary" className="flex gap-1 items-center">
-                <Plus size={18} /> <span>Create Drop</span>
-              </Button>
-            </Link>
-          </div>
+              <div className="flex justify-center">
+                <Link to="/create">
+                  <Button
+                    variant="secondary"
+                    className="flex gap-1 items-center"
+                  >
+                    <Plus size={18} /> <span>Create Drop</span>
+                  </Button>
+                </Link>
+              </div>
+            </>
+          )}
         </Card>
       </div>
     </div>

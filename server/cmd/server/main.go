@@ -8,7 +8,9 @@ import (
 
 	"github.com/falbru/falkdrop/internal/api/handlers"
 	"github.com/falbru/falkdrop/internal/api/middleware"
+	authService "github.com/falbru/falkdrop/internal/app/auth"
 	"github.com/falbru/falkdrop/internal/app/drop"
+	"github.com/falbru/falkdrop/internal/auth"
 	"github.com/falbru/falkdrop/internal/storage/objectstore"
 	"github.com/falbru/falkdrop/internal/storage/objectstore/s3"
 	"github.com/falbru/falkdrop/internal/storage/repository/postgres"
@@ -55,7 +57,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	dropService := drop.NewDropService(repository, objectStore)
+	provider := auth.NewAuthProvider("http://localhost:8080/realms/falkdrop", "falkdrop-api")
+	provider.Init(context.Background())
+	authService := authService.NewAuthService(provider)
+	dropService := drop.NewDropService(repository, objectStore, authService)
 
 	resourceHandler := handlers.NewResourceHandler(dropService)
 	dropHandler := handlers.NewDropHandler(dropService)
@@ -68,5 +73,5 @@ func main() {
 
 	c := cors.AllowAll()
 
-	http.ListenAndServe(":8080", c.Handler(mux))
+	http.ListenAndServe(":8082", c.Handler(mux))
 }

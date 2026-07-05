@@ -11,11 +11,12 @@ type CreateDropRequest = {
 
 type CreateDropResponse = APIDropWithDownloadableResources;
 
-const createDrop = async (request: CreateDropRequest) => {
+const createDrop = async (request: CreateDropRequest, token: string) => {
   const drop: DropWithDownloadableResources = await fetch(`${API_URL}/drop`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify(request),
   }).then(async (response) => {
