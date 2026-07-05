@@ -14,6 +14,7 @@
   "dependencies": {
     "@tailwindcss/vite": "^4.3.0",
     "@tanstack/react-query": "^4.44.0",
+    "keycloak-js": "^26.2.4",
     "lucide-react": "^1.16.0",
     "react": "^19.2.6",
     "react-aria-components": "^1.17.0",
