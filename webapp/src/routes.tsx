@@ -4,6 +4,7 @@ import HomePage from "./pages/Home";
 import LoginPage from "./pages/Login";
 import CreateDropPage from "./pages/CreateDrop";
 import GetDropPage from "./pages/GetDrop";
+import ProtectedRoute from "./components/shared/ProtectedRoute";
 
 const router = createBrowserRouter([
   {
@@ -19,7 +20,11 @@ const router = createBrowserRouter([
     children: [
       {
         path: "/create",
-        Component: CreateDropPage,
+        element: (
+          <ProtectedRoute>
+            <CreateDropPage />
+          </ProtectedRoute>
+        ),
       },
       {
         path: "/:dropId",

@@ -18,7 +18,9 @@ const CreateDropPage = () => {
 
   const createResourceMutation = useAuthenticatedMutation<
     Resource,
-    LocalResource
+    LocalResource,
+    unknown,
+    Error
   >({
     mutationFn: createAndUploadResource,
     onSuccess: (uploadedResource: Resource) => {
@@ -33,7 +35,9 @@ const CreateDropPage = () => {
   const navigate = useNavigate();
   const createDropMutation = useAuthenticatedMutation<
     DropWithDownloadableResources,
-    { resource_ids: string[] }
+    { resource_ids: string[] },
+    unknown,
+    Error
   >({
     mutationFn: createDrop,
     onSuccess: (drop: DropWithDownloadableResources) => {
