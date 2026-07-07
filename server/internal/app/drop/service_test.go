@@ -6,24 +6,47 @@ import (
 	"testing"
 	"time"
 
+	"github.com/falbru/falkdrop/internal/app/auth"
+	authMock "github.com/falbru/falkdrop/internal/app/auth/mock"
 	"github.com/falbru/falkdrop/internal/app/drop"
 	objectStoreMock "github.com/falbru/falkdrop/internal/storage/objectstore/mock"
 	dropMock "github.com/falbru/falkdrop/internal/storage/repository/mock"
 	"github.com/google/uuid"
 )
 
-func getService(repository dropMock.MockDropRepository, objectStore objectStoreMock.MockObjectStore) drop.DropService {
+func contextWithToken() context.Context {
+	return context.WithValue(context.Background(), "token", "12345")
+}
+
+func getService(repository dropMock.MockDropRepository, objectStore objectStoreMock.MockObjectStore, authService auth.AuthService) drop.DropService {
 	return drop.NewDropService(
 		repository,
 		objectStore,
+		authService,
 	)
 }
 
 func TestCreateDrop(t *testing.T) {
-	t.Run("empty resource list", func(t *testing.T) {
-		service := getService(dropMock.NewMockDropRepository(), objectStoreMock.NewMockObjectStore())
+	t.Run("not authenticated", func(t *testing.T) {
+		authService := authMock.NewMockAuthService().WithVerify(func(ctx context.Context, token string) error {
+			return errors.New("not authenticated")
+		})
 
-		_, err := service.CreateDrop([]drop.ResourceId{})
+		service := getService(dropMock.NewMockDropRepository(), objectStoreMock.NewMockObjectStore(), authService)
+
+		_, err := service.CreateDrop(contextWithToken(), []drop.ResourceId{})
+
+		if err == nil {
+			t.Errorf("Expected service to throw error")
+		} else if err.Error() != "not authenticated" {
+			t.Errorf("Expected service to throw not authenticated error, but got: %v", err.Error())
+		}
+	})
+
+	t.Run("empty resource list", func(t *testing.T) {
+		service := getService(dropMock.NewMockDropRepository(), objectStoreMock.NewMockObjectStore(), authMock.NewMockAuthService())
+
+		_, err := service.CreateDrop(contextWithToken(), []drop.ResourceId{})
 
 		if err == nil {
 			t.Errorf("Expected service to throw error with empty resource list")
@@ -39,10 +62,10 @@ func TestCreateDrop(t *testing.T) {
 			},
 		)
 
-		service := getService(repo, objectStoreMock.NewMockObjectStore())
+		service := getService(repo, objectStoreMock.NewMockObjectStore(), authMock.NewMockAuthService())
 		resourceId := drop.ResourceId(uuid.New())
 
-		_, err := service.CreateDrop([]drop.ResourceId{resourceId})
+		_, err := service.CreateDrop(contextWithToken(), []drop.ResourceId{resourceId})
 
 		var expectedError drop.ErrResourcesNotFound
 		if err == nil {
@@ -72,8 +95,8 @@ func TestCreateDrop(t *testing.T) {
 			},
 		)
 
-		service := getService(repo, objectStoreMock.NewMockObjectStore())
-		_, err := service.CreateDrop([]drop.ResourceId{resourceId})
+		service := getService(repo, objectStoreMock.NewMockObjectStore(), authMock.NewMockAuthService())
+		_, err := service.CreateDrop(contextWithToken(), []drop.ResourceId{resourceId})
 
 		var expectedError drop.ErrResourceAlreadyBelongsToDrop
 		if err == nil {
@@ -108,8 +131,8 @@ func TestCreateDrop(t *testing.T) {
 			},
 		)
 
-		service := getService(repo, objectStore)
-		drop, err := service.CreateDrop([]drop.ResourceId{resourceId})
+		service := getService(repo, objectStore, authMock.NewMockAuthService())
+		drop, err := service.CreateDrop(contextWithToken(), []drop.ResourceId{resourceId})
 
 		if err != nil {
 			t.Fatalf("Expected no error when calling CreateDrop, but got: %v", err.Error())
@@ -148,9 +171,9 @@ func TestGetDropWithResourceDownloadUrls(t *testing.T) {
 			},
 		)
 
-		service := getService(repo, objectStoreMock.NewMockObjectStore())
+		service := getService(repo, objectStoreMock.NewMockObjectStore(), authMock.NewMockAuthService())
 
-		_, err := service.GetDropWithResourceDownloadUrls(dropId)
+		_, err := service.GetDropWithResourceDownloadUrls(contextWithToken(), dropId)
 
 		var expectedError drop.ErrDropNotFound
 		if err == nil {
@@ -187,9 +210,9 @@ func TestGetDropWithResourceDownloadUrls(t *testing.T) {
 			},
 		)
 
-		service := getService(repo, objectStore)
+		service := getService(repo, objectStore, authMock.NewMockAuthService())
 
-		drop, err := service.GetDropWithResourceDownloadUrls(dropId)
+		drop, err := service.GetDropWithResourceDownloadUrls(contextWithToken(), dropId)
 
 		if err != nil {
 			t.Fatalf("Expected no error thrown for GetDropWithResourceDownloadUrls")
@@ -231,9 +254,9 @@ func TestCreateResourceWithUploadUrl(t *testing.T) {
 			},
 		)
 
-		service := getService(repo, objectStore)
+		service := getService(repo, objectStore, authMock.NewMockAuthService())
 
-		resource, err := service.CreateResourceWithUploadUrl(resourceType, &resourceName)
+		resource, err := service.CreateResourceWithUploadUrl(contextWithToken(), resourceType, &resourceName)
 
 		if err != nil {
 			t.Fatalf("Expected no error thrown for CreateResourceWithUploadUrl")

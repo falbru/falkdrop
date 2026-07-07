@@ -1,52 +1,66 @@
 package mock
 
-import "github.com/falbru/falkdrop/internal/app/drop"
+import (
+	"context"
+
+	"github.com/falbru/falkdrop/internal/app/auth"
+	authMock "github.com/falbru/falkdrop/internal/app/auth/mock"
+	"github.com/falbru/falkdrop/internal/app/drop"
+)
 
 type MockDropService struct {
-	createResourceWithUploadUrlFn     func(resourceType drop.ResourceType, name *string) (*drop.ResourceWithUploadUrl, error)
-	createDropFn                      func(resourceIds []drop.ResourceId) (*drop.DropWithResourceDownloadUrls, error)
-	getDropWithResourceDownloadUrlsFn func(dropId drop.DropId) (*drop.DropWithResourceDownloadUrls, error)
+	authService                       auth.AuthService
+	createResourceWithUploadUrlFn     func(ctx context.Context, resourceType drop.ResourceType, name *string) (*drop.ResourceWithUploadUrl, error)
+	createDropFn                      func(ctx context.Context, resourceIds []drop.ResourceId) (*drop.DropWithResourceDownloadUrls, error)
+	getDropWithResourceDownloadUrlsFn func(ctx context.Context, dropId drop.DropId) (*drop.DropWithResourceDownloadUrls, error)
 }
 
 func NewMockDropService() *MockDropService {
-	return &MockDropService{}
+	return &MockDropService{
+		authService: authMock.NewMockAuthService(),
+	}
 }
 
-func (service MockDropService) CreateResourceWithUploadUrl(resourceType drop.ResourceType, name *string) (*drop.ResourceWithUploadUrl, error) {
+func (service MockDropService) CreateResourceWithUploadUrl(ctx context.Context, resourceType drop.ResourceType, name *string) (*drop.ResourceWithUploadUrl, error) {
 	if service.createResourceWithUploadUrlFn != nil {
-		return service.createResourceWithUploadUrlFn(resourceType, name)
+		return service.createResourceWithUploadUrlFn(ctx, resourceType, name)
 	}
 
 	return nil, nil
 }
 
-func (service MockDropService) CreateDrop(resourceIds []drop.ResourceId) (*drop.DropWithResourceDownloadUrls, error) {
+func (service MockDropService) CreateDrop(ctx context.Context, resourceIds []drop.ResourceId) (*drop.DropWithResourceDownloadUrls, error) {
 	if service.createDropFn != nil {
-		return service.createDropFn(resourceIds)
+		return service.createDropFn(ctx, resourceIds)
 	}
 
 	return nil, nil
 }
 
-func (service MockDropService) GetDropWithResourceDownloadUrls(dropId drop.DropId) (*drop.DropWithResourceDownloadUrls, error) {
+func (service MockDropService) GetDropWithResourceDownloadUrls(ctx context.Context, dropId drop.DropId) (*drop.DropWithResourceDownloadUrls, error) {
 	if service.getDropWithResourceDownloadUrlsFn != nil {
-		return service.getDropWithResourceDownloadUrlsFn(dropId)
+		return service.getDropWithResourceDownloadUrlsFn(ctx, dropId)
 	}
 
 	return nil, nil
 }
 
-func (service MockDropService) WithCreateResourceWithUploadUrl(fn func(resourceType drop.ResourceType, name *string) (*drop.ResourceWithUploadUrl, error)) MockDropService {
+func (service MockDropService) WithAuthService(authService auth.AuthService) *MockDropService {
+	service.authService = authService
+	return &service
+}
+
+func (service MockDropService) WithCreateResourceWithUploadUrl(fn func(ctx context.Context, resourceType drop.ResourceType, name *string) (*drop.ResourceWithUploadUrl, error)) *MockDropService {
 	service.createResourceWithUploadUrlFn = fn
-	return service
+	return &service
 }
 
-func (service MockDropService) WithCreateDrop(fn func(resourceIds []drop.ResourceId) (*drop.DropWithResourceDownloadUrls, error)) MockDropService {
+func (service MockDropService) WithCreateDrop(fn func(ctx context.Context, resourceIds []drop.ResourceId) (*drop.DropWithResourceDownloadUrls, error)) *MockDropService {
 	service.createDropFn = fn
-	return service
+	return &service
 }
 
-func (service MockDropService) WithGetDropWithResourceDownloadUrls(fn func(dropId drop.DropId) (*drop.DropWithResourceDownloadUrls, error)) MockDropService {
+func (service MockDropService) WithGetDropWithResourceDownloadUrls(fn func(ctx context.Context, dropId drop.DropId) (*drop.DropWithResourceDownloadUrls, error)) *MockDropService {
 	service.getDropWithResourceDownloadUrlsFn = fn
-	return service
+	return &service
 }

@@ -1,6 +1,7 @@
 package handlers_test
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -42,7 +43,7 @@ func TestGetDrop(t *testing.T) {
 	})
 
 	t.Run("drop with dropId doesn't exist", func(t *testing.T) {
-		dropService := mock.NewMockDropService().WithGetDropWithResourceDownloadUrls(func(dropId drop.DropId) (*drop.DropWithResourceDownloadUrls, error) {
+		dropService := mock.NewMockDropService().WithGetDropWithResourceDownloadUrls(func(ctx context.Context, dropId drop.DropId) (*drop.DropWithResourceDownloadUrls, error) {
 			return nil, drop.ErrDropNotFound{DropId: dropId}
 		})
 
@@ -70,7 +71,7 @@ func TestGetDrop(t *testing.T) {
 	})
 
 	t.Run("success", func(t *testing.T) {
-		dropService := mock.NewMockDropService().WithGetDropWithResourceDownloadUrls(func(dropId drop.DropId) (*drop.DropWithResourceDownloadUrls, error) {
+		dropService := mock.NewMockDropService().WithGetDropWithResourceDownloadUrls(func(ctx context.Context, dropId drop.DropId) (*drop.DropWithResourceDownloadUrls, error) {
 			expirationDate, _ := time.Parse("2006-Jan-02", "2030-Jan-01")
 			return &drop.DropWithResourceDownloadUrls{
 				Id:             "12345",
@@ -190,7 +191,7 @@ func TestCreateDrop(t *testing.T) {
 
 	t.Run("one or more resources do not exist", func(t *testing.T) {
 		resourceId := drop.ResourceId(uuid.New())
-		dropService := mock.NewMockDropService().WithCreateDrop(func(resourceIds []drop.ResourceId) (*drop.DropWithResourceDownloadUrls, error) {
+		dropService := mock.NewMockDropService().WithCreateDrop(func(ctx context.Context, resourceIds []drop.ResourceId) (*drop.DropWithResourceDownloadUrls, error) {
 			return nil, drop.ErrResourcesNotFound{ResourceIds: []drop.ResourceId{resourceId}}
 		})
 		dropHandler := handlers.NewDropHandler(dropService)
@@ -219,7 +220,7 @@ func TestCreateDrop(t *testing.T) {
 	t.Run("one or more resource already belongs to another drop", func(t *testing.T) {
 		resourceId := drop.ResourceId(uuid.New())
 		existingDropId := drop.DropId("existing-drop-id")
-		dropService := mock.NewMockDropService().WithCreateDrop(func(resourceIds []drop.ResourceId) (*drop.DropWithResourceDownloadUrls, error) {
+		dropService := mock.NewMockDropService().WithCreateDrop(func(ctx context.Context, resourceIds []drop.ResourceId) (*drop.DropWithResourceDownloadUrls, error) {
 			return nil, drop.ErrResourceAlreadyBelongsToDrop{ResourceId: resourceId, DropId: existingDropId}
 		})
 		dropHandler := handlers.NewDropHandler(dropService)
@@ -251,7 +252,7 @@ func TestCreateDrop(t *testing.T) {
 		resourceName := "myfile.txt"
 		resourceDownloadUrl := "http://example.org/download"
 
-		dropService := mock.NewMockDropService().WithCreateDrop(func(resourceIds []drop.ResourceId) (*drop.DropWithResourceDownloadUrls, error) {
+		dropService := mock.NewMockDropService().WithCreateDrop(func(ctx context.Context, resourceIds []drop.ResourceId) (*drop.DropWithResourceDownloadUrls, error) {
 			return &drop.DropWithResourceDownloadUrls{
 				Id:             "12345",
 				ExpirationDate: expirationDate,

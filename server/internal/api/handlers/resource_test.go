@@ -1,6 +1,7 @@
 package handlers_test
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -42,7 +43,7 @@ func TestCreateResource(t *testing.T) {
 
 	t.Run("service error on create resource", func(t *testing.T) {
 		expectedError := errors.New("failed to create resource in storage")
-		dropService := mock.NewMockDropService().WithCreateResourceWithUploadUrl(func(resourceType drop.ResourceType, name *string) (*drop.ResourceWithUploadUrl, error) {
+		dropService := mock.NewMockDropService().WithCreateResourceWithUploadUrl(func(ctx context.Context, resourceType drop.ResourceType, name *string) (*drop.ResourceWithUploadUrl, error) {
 			return nil, expectedError
 		})
 		resourceHandler := handlers.NewResourceHandler(dropService)
@@ -63,7 +64,7 @@ func TestCreateResource(t *testing.T) {
 		resourceName := "myfile.txt"
 		uploadUrl := "http://example.org/upload"
 
-		dropService := mock.NewMockDropService().WithCreateResourceWithUploadUrl(func(resourceType drop.ResourceType, name *string) (*drop.ResourceWithUploadUrl, error) {
+		dropService := mock.NewMockDropService().WithCreateResourceWithUploadUrl(func(ctx context.Context, resourceType drop.ResourceType, name *string) (*drop.ResourceWithUploadUrl, error) {
 			return &drop.ResourceWithUploadUrl{
 				Resource: drop.Resource{
 					Id:   resourceId,
@@ -113,7 +114,7 @@ func TestCreateResource(t *testing.T) {
 		resourceId := drop.ResourceId(uuid.MustParse("22222222-2222-2222-2222-222222222222"))
 		uploadUrl := "http://example.org/upload"
 
-		dropService := mock.NewMockDropService().WithCreateResourceWithUploadUrl(func(resourceType drop.ResourceType, name *string) (*drop.ResourceWithUploadUrl, error) {
+		dropService := mock.NewMockDropService().WithCreateResourceWithUploadUrl(func(ctx context.Context, resourceType drop.ResourceType, name *string) (*drop.ResourceWithUploadUrl, error) {
 			return &drop.ResourceWithUploadUrl{
 				Resource: drop.Resource{
 					Id:   resourceId,
@@ -163,7 +164,7 @@ func TestCreateResource(t *testing.T) {
 		resourceId := drop.ResourceId(uuid.MustParse("33333333-3333-3333-3333-333333333333"))
 		uploadUrl := "http://example.org/upload"
 
-		dropService := mock.NewMockDropService().WithCreateResourceWithUploadUrl(func(resourceType drop.ResourceType, name *string) (*drop.ResourceWithUploadUrl, error) {
+		dropService := mock.NewMockDropService().WithCreateResourceWithUploadUrl(func(ctx context.Context, resourceType drop.ResourceType, name *string) (*drop.ResourceWithUploadUrl, error) {
 			return &drop.ResourceWithUploadUrl{
 				Resource: drop.Resource{
 					Id:   resourceId,

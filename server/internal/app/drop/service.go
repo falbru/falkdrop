@@ -21,10 +21,10 @@ type DropService interface {
 type dropServiceImpl struct {
 	repository  DropRepository
 	objectStore objectstore.ObjectStore
-	authService *auth.AuthService
+	authService auth.AuthService
 }
 
-func NewDropService(repository DropRepository, objectStore objectstore.ObjectStore, authService *auth.AuthService) DropService {
+func NewDropService(repository DropRepository, objectStore objectstore.ObjectStore, authService auth.AuthService) DropService {
 	return &dropServiceImpl{
 		repository,
 		objectStore,
@@ -66,6 +66,13 @@ func (service dropServiceImpl) genUniqueDropId(ctx context.Context) (DropId, err
 }
 
 func (service dropServiceImpl) CreateResourceWithUploadUrl(ctx context.Context, resourceType ResourceType, name *string) (*ResourceWithUploadUrl, error) {
+	switch ctx.Value("token").(type) {
+	case string:
+		break
+	default:
+		return nil, errors.New("token is not set or not a string")
+	}
+
 	token := ctx.Value("token").(string)
 
 	if err := service.authService.Verify(ctx, token); err != nil {
@@ -95,6 +102,13 @@ func (service dropServiceImpl) CreateResourceWithUploadUrl(ctx context.Context, 
 }
 
 func (service dropServiceImpl) CreateDrop(ctx context.Context, resourceIds []ResourceId) (*DropWithResourceDownloadUrls, error) {
+	switch ctx.Value("token").(type) {
+	case string:
+		break
+	default:
+		return nil, errors.New("token is not set or is not a string")
+	}
+
 	token := ctx.Value("token").(string)
 
 	if err := service.authService.Verify(ctx, token); err != nil {
