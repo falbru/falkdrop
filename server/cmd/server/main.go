@@ -58,7 +58,17 @@ func main() {
 		os.Exit(1)
 	}
 
-	provider := auth.NewAuthProvider("http://localhost:8080/realms/falkdrop", "falkdrop-api")
+	keycloakRealmUrl, isKeycloakRealmUrlSet := os.LookupEnv("KEYCLOAK_REALM_URL")
+	if !isKeycloakRealmUrlSet {
+		fmt.Fprintf(os.Stderr, "Error: KEYCLOAK_REALM_URL not set\n")
+	}
+
+	keycloakClientId, isKeycloakClientSet := os.LookupEnv("KEYCLOAK_CLIENT_ID")
+	if !isKeycloakClientSet {
+		fmt.Fprintf(os.Stderr, "Error: KEYCLOAK_CLIENT_ID not set\n")
+	}
+
+	provider := auth.NewAuthProvider(keycloakRealmUrl, keycloakClientId)
 	provider.Init(context.Background())
 	authService := authService.NewAuthService(provider)
 	dropService := drop.NewDropService(repository, objectStore, authService)
