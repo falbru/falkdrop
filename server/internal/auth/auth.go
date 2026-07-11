@@ -41,3 +41,30 @@ func (auth AuthProvider) Verify(ctx context.Context, token string) error {
 
 	return err
 }
+
+func (auth AuthProvider) HasRole(ctx context.Context, token string, role string) (bool, error) {
+	idToken, err := auth.verifier.Verify(ctx, token)
+	if err != nil {
+		return false, err
+	}
+
+	var claims struct {
+		ResourceAccess map[string]struct {
+			Roles []string `json:"roles"`
+		} `json:"resource_access"`
+	}
+
+	if err := idToken.Claims(&claims); err != nil {
+		return false, err
+	}
+
+	if clientRoles, ok := claims.ResourceAccess[auth.clientId]; ok {
+		for _, r := range clientRoles.Roles {
+			if r == role {
+				return true, nil
+			}
+		}
+	}
+
+	return false, nil
+}

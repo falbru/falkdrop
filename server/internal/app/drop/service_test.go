@@ -28,8 +28,8 @@ func getService(repository dropMock.MockDropRepository, objectStore objectStoreM
 
 func TestCreateDrop(t *testing.T) {
 	t.Run("not authenticated", func(t *testing.T) {
-		authService := authMock.NewMockAuthService().WithVerify(func(ctx context.Context, token string) error {
-			return errors.New("not authenticated")
+		authService := authMock.NewMockAuthService().WithHasRole(func(ctx context.Context, token string, role auth.AuthRole) (bool, error) {
+			return false, nil
 		})
 
 		service := getService(dropMock.NewMockDropRepository(), objectStoreMock.NewMockObjectStore(), authService)

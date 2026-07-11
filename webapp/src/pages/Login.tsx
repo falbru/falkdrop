@@ -11,7 +11,7 @@ export default function LoginPage() {
   const location = useLocation();
 
   useEffect(() => {
-    if (!auth.isLoading) {
+    if (auth) {
       const redirectUri =
         (location.state as LocationState)?.redirectUri ??
         window.location.origin;

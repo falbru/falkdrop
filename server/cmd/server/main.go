@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"net"
 	"net/http"
 	"os"
 
@@ -73,5 +74,10 @@ func main() {
 
 	c := cors.AllowAll()
 
-	http.ListenAndServe(":8082", c.Handler(mux))
+	l, err := net.Listen("tcp", ":8082")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %s", err.Error())
+		os.Exit(1)
+	}
+	http.Serve(l, c.Handler(mux))
 }

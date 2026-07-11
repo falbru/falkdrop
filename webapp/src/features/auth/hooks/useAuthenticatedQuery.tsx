@@ -16,7 +16,7 @@ export function useAuthenticatedQuery<TData, TError>(
   return useQuery<TData, TError>({
     ...options,
     queryFn: () => {
-      const token = auth.getToken();
+      const token = auth?.getToken();
       if (!token) {
         throw new Error("No authentication token available");
       }

@@ -75,13 +75,18 @@ func (service dropServiceImpl) CreateResourceWithUploadUrl(ctx context.Context, 
 
 	token := ctx.Value("token").(string)
 
-	if err := service.authService.Verify(ctx, token); err != nil {
+	hasCreateDropPrivilege, err := service.authService.HasRole(ctx, token, auth.CreateDropRole)
+	if err != nil {
 		return nil, err
+	}
+
+	if !hasCreateDropPrivilege {
+		return nil, auth.ErrUnauthorized
 	}
 
 	id := ResourceId(uuid.New())
 
-	err := service.repository.CreateResource(ctx, id, resourceType, name)
+	err = service.repository.CreateResource(ctx, id, resourceType, name)
 	if err != nil {
 		return nil, err
 	}
@@ -111,8 +116,13 @@ func (service dropServiceImpl) CreateDrop(ctx context.Context, resourceIds []Res
 
 	token := ctx.Value("token").(string)
 
-	if err := service.authService.Verify(ctx, token); err != nil {
+	hasCreateDropPrivilege, err := service.authService.HasRole(ctx, token, auth.CreateDropRole)
+	if err != nil {
 		return nil, err
+	}
+
+	if !hasCreateDropPrivilege {
+		return nil, errors.New("not authorized")
 	}
 
 	if len(resourceIds) == 0 {

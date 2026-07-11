@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	httperror "github.com/falbru/falkdrop/internal/api/errors"
+	"github.com/falbru/falkdrop/internal/app/auth"
 	"github.com/falbru/falkdrop/internal/app/drop"
 	"github.com/google/uuid"
 )
@@ -90,7 +91,6 @@ func (handler DropHandler) Create(w http.ResponseWriter, r *http.Request) error 
 	defer r.Body.Close()
 
 	if len(req.ResourceIds) == 0 {
-		w.WriteHeader(http.StatusBadRequest)
 		return httperror.New(http.StatusBadRequest, "resourceIds is empty")
 	}
 
@@ -100,13 +100,20 @@ func (handler DropHandler) Create(w http.ResponseWriter, r *http.Request) error 
 	}
 
 	token := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
+
+	if token == "" {
+		return httperror.New(http.StatusUnauthorized, "bearer token not provided")
+	}
+
 	ctx := context.WithValue(context.Background(), "token", token)
 
 	drp, err := handler.dropService.CreateDrop(ctx, resourceIds)
 	if err != nil {
 		var errResourcesNotFound drop.ErrResourcesNotFound
 		var errResourceAlreadyBelongsToDrop drop.ErrResourceAlreadyBelongsToDrop
-		if errors.As(err, &errResourcesNotFound) {
+		if errors.Is(err, auth.ErrUnauthorized) {
+			return httperror.New(http.StatusUnauthorized, err.Error())
+		} else if errors.As(err, &errResourcesNotFound) {
 			return httperror.NotFound(err.Error())
 		} else if errors.As(err, &errResourceAlreadyBelongsToDrop) {
 			return httperror.New(http.StatusBadRequest, err.Error())

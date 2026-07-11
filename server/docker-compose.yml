@@ -32,11 +32,11 @@ services:
       - KC_BOOTSTRAP_ADMIN_USERNAME=admin
       - KC_BOOTSTRAP_ADMIN_PASSWORD=admin
     ports:
-      - "8082:8082"
+      - "8080:8080"
     command:
       - "start-dev"
     volumes:
-      - "keycloak_data:/opt/jboss/keycloak/standalone/data/"
+      - keycloak_data:/opt/keycloak/data/
 
 volumes:
   postgres_data:

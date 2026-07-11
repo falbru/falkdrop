@@ -14,7 +14,7 @@ func ErrorHandler(fn HTTPHandlerWithErr) func(w http.ResponseWriter, r *http.Req
 		slog.Info("incoming request", "method", r.Method, "path", r.URL.Path, "client_ip", r.RemoteAddr)
 
 		if err := fn(w, r); err != nil {
-			var httpErr *httperror.HTTPError
+			var httpErr httperror.HTTPError
 			if errors.As(err, &httpErr) {
 				http.Error(w, err.Error(), httpErr.Code)
 				if httpErr.Code >= 500 {

@@ -1,5 +1,5 @@
 import { useEffect, type ReactNode } from "react";
-import { useLocation, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { useAuth } from "../../features/auth/contexts/AuthProvider";
 import type { LocationState } from "../../pages/Login";
 
@@ -8,20 +8,19 @@ type ProtectedRouteProps = {
 };
 
 const ProtectedRoute = (props: ProtectedRouteProps) => {
-  const { isLoading, isAuthenticated } = useAuth();
+  const auth = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated()) {
+    if (auth && !auth.isAuthenticated()) {
       const currentUrl = window.location.href;
       navigate("/login", {
         state: { redirectUri: currentUrl } as LocationState,
       });
     }
-  }, [isLoading, isAuthenticated, navigate]);
+  }, [auth, navigate]);
 
-  return !isLoading && isAuthenticated() ? props.children : null;
+  return auth && auth.isAuthenticated() ? props.children : null;
 };
 
 export default ProtectedRoute;

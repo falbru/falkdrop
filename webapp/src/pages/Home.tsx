@@ -24,54 +24,49 @@ const HomePage = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4">
-      <div className="w-full max-w-sm">
-        <h1 className="font-(family-name:--font-title) uppercase text-6xl font-bold mb-6 text-center text-neutral-100">
-          Falk
-          <br />
-          Drop
-        </h1>
+    <div className="flex flex-col items-center h-full">
+      <h1 className="font-(family-name:--font-title) uppercase text-6xl font-bold mb-6 text-center text-neutral-100">
+        Falk
+        <br />
+        Drop
+      </h1>
 
-        <Card className="flex flex-col gap-3">
-          <Input
-            onChange={(e) => setInputDropCode(e.target.value)}
-            value={inputDropCode}
-            placeholder="Drop Code"
-            maxLength={5}
-            className="uppercase text-center"
-            onKeyDown={handleKeyDown}
-          />
+      <Card className="flex flex-col gap-3">
+        <Input
+          onChange={(e) => setInputDropCode(e.target.value)}
+          value={inputDropCode}
+          placeholder="Drop Code"
+          maxLength={5}
+          className="uppercase text-center"
+          onKeyDown={handleKeyDown}
+        />
 
-          <Button
-            onClick={handleEnter}
-            variant="primary"
-            isDisabled={inputDropCode.length < 5}
-          >
-            Enter
-          </Button>
+        <Button
+          onClick={handleEnter}
+          variant="primary"
+          isDisabled={inputDropCode.length < 5}
+        >
+          Enter
+        </Button>
 
-          {auth.isAuthenticated() && (
-            <>
-              <div className="flex items-center gap-2 my-3">
-                <div className="flex-grow h-[1px] bg-neutral-700" />
-                <span className="text-sm text-neutral-500 uppercase">Or</span>
-                <div className="flex-grow h-[1px] bg-neutral-700" />
-              </div>
+        {auth && auth.isAuthenticated() && (
+          <>
+            <div className="flex items-center gap-2 my-3">
+              <div className="flex-grow h-[1px] bg-neutral-700" />
+              <span className="text-sm text-neutral-500 uppercase">Or</span>
+              <div className="flex-grow h-[1px] bg-neutral-700" />
+            </div>
 
-              <div className="flex justify-center">
-                <Link to="/create">
-                  <Button
-                    variant="secondary"
-                    className="flex gap-1 items-center"
-                  >
-                    <Plus size={18} /> <span>Create Drop</span>
-                  </Button>
-                </Link>
-              </div>
-            </>
-          )}
-        </Card>
-      </div>
+            <div className="flex justify-center">
+              <Link to="/create">
+                <Button variant="secondary" className="flex gap-1 items-center">
+                  <Plus size={18} /> <span>Create Drop</span>
+                </Button>
+              </Link>
+            </div>
+          </>
+        )}
+      </Card>
     </div>
   );
 };

@@ -8,12 +8,17 @@ import ProtectedRoute from "./components/shared/ProtectedRoute";
 
 const router = createBrowserRouter([
   {
-    path: "/",
-    Component: HomePage,
-  },
-  {
     path: "/login",
     Component: LoginPage,
+  },
+  {
+    element: <Layout showHeader={false} />,
+    children: [
+      {
+        index: true,
+        Component: HomePage,
+      },
+    ],
   },
   {
     element: <Layout />,

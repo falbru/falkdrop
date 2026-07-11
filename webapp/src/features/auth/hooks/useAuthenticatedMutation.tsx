@@ -14,7 +14,7 @@ export function useAuthenticatedMutation<TData, TVariables, TContext, TError>(
   return useMutation<TData, TError, TVariables, TContext>({
     ...options,
     mutationFn: (variables) => {
-      const token = auth.getToken();
+      const token = auth?.getToken();
       if (!token) {
         throw new Error("No authentication token available");
       }
