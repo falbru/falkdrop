@@ -2,6 +2,8 @@ package auth
 
 import (
 	"context"
+	"errors"
+
 	"github.com/coreos/go-oidc/v3/oidc"
 )
 
@@ -29,6 +31,10 @@ func (auth *AuthProvider) Init(ctx context.Context) error {
 	verifier := provider.Verifier(&oidc.Config{
 		ClientID: auth.clientId,
 	})
+
+	if verifier == nil {
+		return errors.New("Auth IDTokenVerifier creation failed")
+	}
 
 	auth.provider = provider
 	auth.verifier = verifier

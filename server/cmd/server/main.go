@@ -69,7 +69,12 @@ func main() {
 	}
 
 	provider := auth.NewAuthProvider(keycloakRealmUrl, keycloakClientId)
-	provider.Init(context.Background())
+	err = provider.Init(context.Background())
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: Failed to create auth provider: %s", err.Error())
+		os.Exit(1)
+	}
+
 	authService := authService.NewAuthService(provider)
 	dropService := drop.NewDropService(repository, objectStore, authService)
 
