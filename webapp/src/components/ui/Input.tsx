@@ -7,17 +7,17 @@ type InputProps = AriaInputProps & {
 
 const Input = (props: InputProps) => {
   const baseStyles =
-    "w-full rounded-lg py-2 px-3 text-sm transition-colors duration-200 placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-neutral-500 focus:ring-offset-0 disabled:opacity-50 disabled:cursor-not-allowed";
+    "w-full rounded-lg py-2 px-3 text-sm transition-colors duration-200 placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-border focus:ring-offset-0 disabled:opacity-50 disabled:cursor-not-allowed";
 
   let variantStyle = "";
   switch (props.variant) {
     case "ghost":
-      variantStyle = "bg-transparent border-none text-neutral-300";
+      variantStyle = "bg-transparent border-none text-text";
       break;
     case "default":
     default:
       variantStyle =
-        "bg-card border border-neutral-700 text-neutral-100 hover:border-neutral-600";
+        "bg-card border border-border text-text hover:border-text-muted";
       break;
   }
 

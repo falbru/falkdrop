@@ -24,14 +24,14 @@ const HomePage = () => {
   };
 
   return (
-    <div className="flex flex-col items-center h-full">
-      <h1 className="font-(family-name:--font-title) uppercase text-6xl font-bold mb-6 text-center text-neutral-100">
+    <div className="flex flex-col items-center flex-grow justify-center">
+      <h1 className="font-(family-name:--font-title) uppercase text-6xl font-bold mb-6 text-center text-text">
         Falk
         <br />
         Drop
       </h1>
 
-      <Card className="flex flex-col gap-3">
+      <Card className="flex flex-col gap-3 w-[400px] max-w-full">
         <Input
           onChange={(e) => setInputDropCode(e.target.value)}
           value={inputDropCode}
@@ -52,9 +52,9 @@ const HomePage = () => {
         {auth && auth.isAuthenticated() && (
           <>
             <div className="flex items-center gap-2 my-3">
-              <div className="flex-grow h-[1px] bg-neutral-700" />
-              <span className="text-sm text-neutral-500 uppercase">Or</span>
-              <div className="flex-grow h-[1px] bg-neutral-700" />
+              <div className="flex-grow h-[1px] bg-border" />
+              <span className="text-sm text-text-muted uppercase">Or</span>
+              <div className="flex-grow h-[1px] bg-border" />
             </div>
 
             <div className="flex justify-center">

@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import Button from "../components/ui/Button";
-import Card from "../components/ui/Card";
+import ItemGroup from "../components/ui/ItemGroup";
 import { useAuthenticatedMutation } from "../features/auth/hooks";
 import createDrop from "../features/drop/api/createDrop";
 import createAndUploadResource from "../features/drop/api/createAndUploadResource";
 import ResourceDropZone from "../features/drop/components/ResourceDropZone";
+import ResourceItem from "../features/drop/components/ResourceItem";
 import type {
   DropWithDownloadableResources,
   LocalResource,
@@ -55,28 +56,23 @@ const CreateDropPage = () => {
     createResourceMutation.isPending || createDropMutation.isPending;
 
   return (
-    <div className="flex flex-col gap-4 items-center">
+    <div className="flex flex-col gap-4 items-stretch">
       <ResourceDropZone onDrop={handleOnDrop} />
 
       {uploadedResources.length > 0 && (
-        <Card className="w-full">
-          <h2 className="text-sm font-medium text-neutral-400 mb-3">
-            Uploaded Files
-          </h2>
-          <ul className="space-y-2">
-            {uploadedResources.map((res) => (
-              <li
-                key={res.id}
-                className="text-sm text-neutral-300 truncate max-w-full"
-              >
-                {res.name ?? res.id}
-              </li>
-            ))}
-          </ul>
-        </Card>
+        <ItemGroup title="Files">
+          {uploadedResources.map((res, index) => (
+            <ResourceItem
+              key={res.id}
+              name={res.name ?? res.id}
+              size="64 GB"
+              showBorder={index < uploadedResources.length - 1}
+            />
+          ))}
+        </ItemGroup>
       )}
 
-      <div className="flex justify-center">
+      <div className="flex justify-end">
         <Button
           onClick={handleCreateDrop}
           variant="primary"

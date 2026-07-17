@@ -14,27 +14,27 @@ const Layout = (props: LayoutProps) => {
       {showHeader && (
         <header className="py-4">
           <Link to="/">
-            <h1 className="font-(family-name:--font-title) uppercase text-center text-3xl font-bold text-neutral-100 hover:text-neutral-300 transition-colors">
+            <h1 className="font-(family-name:--font-title) uppercase text-center text-3xl font-bold text-text hover:text-text-secondary transition-colors">
               FalkDrop
             </h1>
           </Link>
         </header>
       )}
-      <main className="flex-grow p-8">
+      <main className="flex-grow p-8 flex flex-col">
         <Outlet />
       </main>
       <footer className="py-4 text-center">
         {auth && auth.isAuthenticated() ? (
           <button
             onClick={() => auth.logout()}
-            className="text-sm text-neutral-400 hover:text-neutral-200 transition-colors"
+            className="text-sm text-text-secondary hover:text-text transition-colors"
           >
             Log out
           </button>
         ) : (
           <Link
             to="/login"
-            className="text-sm text-neutral-400 hover:text-neutral-200 transition-colors"
+            className="text-sm text-text-secondary hover:text-text transition-colors"
           >
             Log in
           </Link>

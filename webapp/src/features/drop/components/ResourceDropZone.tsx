@@ -51,11 +51,11 @@ const ResourceDropZone = (props: ResourceDropZoneProps) => {
             }
           }}
         >
-          <Button variant="secondary" className="p-4">
+          <Button variant="secondary" className="px-3 py-3">
             <Upload size={48} />
           </Button>
         </FileTrigger>
-        <div slot="label" className="text-neutral-700">
+        <div slot="label" className="text-text-muted">
           Drop files or paste text here
         </div>
       </div>
