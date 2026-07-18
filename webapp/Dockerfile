@@ -6,9 +6,11 @@ ENV PATH="$PNPM_HOME:$PATH"
 ENV CI=true
 
 WORKDIR /app
-COPY . .
-RUN pnpm approve-builds esbuild
+COPY package.json .
+COPY pnpm-lock.yaml .
+RUN echo 'dangerouslyAllowAllBuilds: true' > pnpm-workspace.yaml
 RUN pnpm install --frozen-lockfile
+COPY . .
 RUN pnpm build
 
 FROM nginx:alpine AS runner
