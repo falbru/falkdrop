@@ -16,6 +16,7 @@ WORKDIR /app
 
 COPY --from=builder /server /server
 COPY --from=builder /migrate /migrate
+COPY --from=builder /app/migrations /app/migrations
 
 RUN apk --no-cache add ca-certificates
 
