@@ -55,20 +55,18 @@ func (auth AuthProvider) HasRole(ctx context.Context, token string, role string)
 	}
 
 	var claims struct {
-		ResourceAccess map[string]struct {
+		RealmAccess struct {
 			Roles []string `json:"roles"`
-		} `json:"resource_access"`
+		} `json:"realm_access"`
 	}
 
 	if err := idToken.Claims(&claims); err != nil {
 		return false, err
 	}
 
-	if clientRoles, ok := claims.ResourceAccess[auth.clientId]; ok {
-		for _, r := range clientRoles.Roles {
-			if r == role {
-				return true, nil
-			}
+	for _, r := range claims.RealmAccess.Roles {
+		if r == role {
+			return true, nil
 		}
 	}
 
