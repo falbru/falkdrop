@@ -11,12 +11,64 @@ import (
 
 	httperror "github.com/falbru/falkdrop/internal/api/errors"
 	"github.com/falbru/falkdrop/internal/api/handlers"
+	"github.com/falbru/falkdrop/internal/app/auth"
 	"github.com/falbru/falkdrop/internal/app/drop"
 	"github.com/falbru/falkdrop/internal/app/drop/mock"
 	"github.com/google/uuid"
 )
 
 func TestCreateResource(t *testing.T) {
+	t.Run("bearer token not provided", func(t *testing.T) {
+		dropService := mock.NewMockDropService()
+		resourceHandler := handlers.NewResourceHandler(dropService)
+
+		reqBody := `{"resource_type": "file", "name": "myfile.txt"}`
+		req := httptest.NewRequest(http.MethodPost, "/resource", strings.NewReader(reqBody))
+		w := httptest.NewRecorder()
+
+		err := resourceHandler.Create(w, req)
+		if err == nil {
+			t.Errorf("Expected resource handler to throw error, but got: %v", err.Error())
+		}
+
+		var httpError httperror.HTTPError
+		if !errors.As(err, &httpError) {
+			t.Errorf("Expected resource handler to throw httperror, but got %v", err.Error())
+			return
+		}
+
+		if httpError.Code != http.StatusUnauthorized {
+			t.Errorf("Expected resource handler to throw %v httperror, but got %v", http.StatusBadRequest, httpError.Code)
+		}
+	})
+
+	t.Run("unauthorized user", func(t *testing.T) {
+		dropService := mock.NewMockDropService().WithCreateResourceWithUploadUrl(func(ctx context.Context, resourceType drop.ResourceType, name *string) (*drop.ResourceWithUploadUrl, error) {
+			return nil, auth.ErrUnauthorized
+		})
+		resourceHandler := handlers.NewResourceHandler(dropService)
+
+		reqBody := `{"resource_type": "file", "name": "myfile.txt"}`
+		req := httptest.NewRequest(http.MethodPost, "/resource", strings.NewReader(reqBody))
+		req.Header.Set("Authorization", "Bearer test-token")
+		w := httptest.NewRecorder()
+
+		err := resourceHandler.Create(w, req)
+		if err == nil {
+			t.Errorf("Expected resource handler to throw error, but got: %v", err.Error())
+		}
+
+		var httpError httperror.HTTPError
+		if !errors.As(err, &httpError) {
+			t.Errorf("Expected resource handler to throw httperror, but got %v", err.Error())
+			return
+		}
+
+		if httpError.Code != http.StatusUnauthorized {
+			t.Errorf("Expected resource handler to throw %v httperror, but got %v", http.StatusBadRequest, httpError.Code)
+		}
+	})
+
 	t.Run("invalid request body", func(t *testing.T) {
 		dropService := mock.NewMockDropService()
 		resourceHandler := handlers.NewResourceHandler(dropService)
@@ -78,6 +130,7 @@ func TestCreateResource(t *testing.T) {
 
 		reqBody := `{"resource_type": "file", "name": "myfile.txt"}`
 		req := httptest.NewRequest(http.MethodPost, "/resource", strings.NewReader(reqBody))
+		req.Header.Set("Authorization", "Bearer test-token")
 		w := httptest.NewRecorder()
 
 		err := resourceHandler.Create(w, req)
@@ -128,6 +181,7 @@ func TestCreateResource(t *testing.T) {
 
 		reqBody := `{"resource_type": "text"}`
 		req := httptest.NewRequest(http.MethodPost, "/resource", strings.NewReader(reqBody))
+		req.Header.Set("Authorization", "Bearer test-token")
 		w := httptest.NewRecorder()
 
 		err := resourceHandler.Create(w, req)
@@ -178,6 +232,7 @@ func TestCreateResource(t *testing.T) {
 
 		reqBody := `{"resource_type": "file"}`
 		req := httptest.NewRequest(http.MethodPost, "/resource", strings.NewReader(reqBody))
+		req.Header.Set("Authorization", "Bearer test-token")
 		w := httptest.NewRecorder()
 
 		err := resourceHandler.Create(w, req)

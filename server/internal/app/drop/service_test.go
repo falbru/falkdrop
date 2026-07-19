@@ -38,7 +38,7 @@ func TestCreateDrop(t *testing.T) {
 
 		if err == nil {
 			t.Errorf("Expected service to throw error")
-		} else if err.Error() != "not authenticated" {
+		} else if err.Error() != "not authorized" {
 			t.Errorf("Expected service to throw not authenticated error, but got: %v", err.Error())
 		}
 	})

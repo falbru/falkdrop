@@ -12,6 +12,7 @@ import (
 
 	httperror "github.com/falbru/falkdrop/internal/api/errors"
 	"github.com/falbru/falkdrop/internal/api/handlers"
+	"github.com/falbru/falkdrop/internal/app/auth"
 	"github.com/falbru/falkdrop/internal/app/drop"
 	"github.com/falbru/falkdrop/internal/app/drop/mock"
 	"github.com/google/uuid"
@@ -136,11 +137,68 @@ func TestGetDrop(t *testing.T) {
 }
 
 func TestCreateDrop(t *testing.T) {
+	t.Run("bearer token not provided", func(t *testing.T) {
+		resourceId := drop.ResourceId(uuid.New())
+		dropService := mock.NewMockDropService()
+		dropHandler := handlers.NewDropHandler(dropService)
+
+		reqBody := `{"resource_ids": ["` + resourceId.String() + `"]}`
+		req := httptest.NewRequest(http.MethodPost, "/drop", strings.NewReader(reqBody))
+		w := httptest.NewRecorder()
+
+		err := dropHandler.Create(w, req)
+		if err == nil {
+			t.Errorf("Expected drop handler to throw error")
+			return
+		}
+
+		var httpError httperror.HTTPError
+		if !errors.As(err, &httpError) {
+			t.Errorf("Expected drop handler to throw httperror")
+			return
+		}
+
+		if httpError.Code != http.StatusUnauthorized {
+			t.Errorf("Expected drop handler to throw %v httperror, but got %v", http.StatusUnauthorized, httpError.Code)
+		}
+	})
+
+	t.Run("unauthorized user", func(t *testing.T) {
+		resourceId := drop.ResourceId(uuid.New())
+		dropService := mock.NewMockDropService().WithCreateDrop(func(ctx context.Context, resourceIds []drop.ResourceId) (*drop.DropWithResourceDownloadUrls, error) {
+			return nil, auth.ErrUnauthorized
+		})
+
+		dropHandler := handlers.NewDropHandler(dropService)
+
+		reqBody := `{"resource_ids": ["` + resourceId.String() + `"]}`
+		req := httptest.NewRequest(http.MethodPost, "/drop", strings.NewReader(reqBody))
+		req.Header.Set("Authorization", "Bearer test-token")
+		w := httptest.NewRecorder()
+
+		err := dropHandler.Create(w, req)
+		if err == nil {
+			t.Errorf("Expected drop handler to throw error")
+			return
+		}
+
+		var httpError httperror.HTTPError
+		if !errors.As(err, &httpError) {
+			t.Errorf("Expected drop handler to throw httperror")
+			return
+		}
+
+		if httpError.Code != http.StatusUnauthorized {
+			t.Errorf("Expected drop handler to throw %v httperror, but got %v", http.StatusUnauthorized, httpError.Code)
+		}
+	})
+
 	t.Run("invalid drop request body", func(t *testing.T) {
 		dropService := mock.NewMockDropService()
 		dropHandler := handlers.NewDropHandler(dropService)
 
 		req := httptest.NewRequest(http.MethodPost, "/drop", nil)
+		req.Header.Set("Authorization", "Bearer test-token")
 		w := httptest.NewRecorder()
 
 		err := dropHandler.Create(w, req)
@@ -166,6 +224,7 @@ func TestCreateDrop(t *testing.T) {
 
 		reqBody := `{"resource_ids": []}`
 		req := httptest.NewRequest(http.MethodPost, "/drop", strings.NewReader(reqBody))
+		req.Header.Set("Authorization", "Bearer test-token")
 		w := httptest.NewRecorder()
 
 		err := dropHandler.Create(w, req)
@@ -198,6 +257,7 @@ func TestCreateDrop(t *testing.T) {
 
 		reqBody := `{"resource_ids": ["` + resourceId.String() + `"]}`
 		req := httptest.NewRequest(http.MethodPost, "/drop", strings.NewReader(reqBody))
+		req.Header.Set("Authorization", "Bearer test-token")
 		w := httptest.NewRecorder()
 
 		err := dropHandler.Create(w, req)
@@ -227,6 +287,7 @@ func TestCreateDrop(t *testing.T) {
 
 		reqBody := `{"resource_ids": ["` + resourceId.String() + `"]}`
 		req := httptest.NewRequest(http.MethodPost, "/drop", strings.NewReader(reqBody))
+		req.Header.Set("Authorization", "Bearer test-token")
 		w := httptest.NewRecorder()
 
 		err := dropHandler.Create(w, req)
@@ -273,6 +334,7 @@ func TestCreateDrop(t *testing.T) {
 
 		reqBody := `{"resource_ids": ["11111111-1111-1111-1111-111111111111"]}`
 		req := httptest.NewRequest(http.MethodPost, "/drop", strings.NewReader(reqBody))
+		req.Header.Set("Authorization", "Bearer test-token")
 		w := httptest.NewRecorder()
 
 		err = dropHandler.Create(w, req)
