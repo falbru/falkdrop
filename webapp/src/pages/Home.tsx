@@ -6,7 +6,7 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Plus } from "lucide-react";
 import { useAuth } from "@/features/auth/contexts/AuthProvider";
 import { useQueryClient } from "@tanstack/react-query";
-import fetchDrop from "@/features/drop/api/fetchDrop";
+import getDrop from "@/features/drop/api/getDrop";
 import { toast } from "sonner";
 
 const HomePage = () => {
@@ -25,10 +25,10 @@ const HomePage = () => {
     try {
       await queryClient.fetchQuery({
         queryKey: ["drop", inputDropCode],
-        queryFn: () => fetchDrop(inputDropCode),
+        queryFn: () => getDrop(inputDropCode),
       });
 
-      navigate(`/${inputDropCode}`);
+      void navigate(`/${inputDropCode}`);
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Drop not found";
@@ -41,7 +41,7 @@ const HomePage = () => {
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
-      handleEnter();
+      void handleEnter();
     }
   };
 
@@ -56,7 +56,9 @@ const HomePage = () => {
       <Card className="w-[480px] max-w-full">
         <CardContent className="flex flex-col gap-2">
           <Input
-            onChange={(e) => setInputDropCode(e.target.value)}
+            onChange={(e) => {
+              setInputDropCode(e.target.value);
+            }}
             value={inputDropCode}
             placeholder="Drop Code"
             maxLength={5}
@@ -65,7 +67,7 @@ const HomePage = () => {
           />
 
           <Button
-            onClick={handleEnter}
+            onClick={() => void handleEnter()}
             isDisabled={inputDropCode.length < 5 || isValidating}
             className="w-full"
           >

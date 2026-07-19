@@ -5,9 +5,9 @@ import {
   type APIDropWithDownloadableResources,
 } from "./types";
 
-type CreateDropRequest = {
+interface CreateDropRequest {
   resource_ids: string[];
-};
+}
 
 type CreateDropResponse = APIDropWithDownloadableResources;
 

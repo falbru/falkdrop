@@ -1,24 +1,16 @@
 import type { ReactNode } from "react";
 import { File } from "lucide-react";
-import {
-  Item,
-  ItemMedia,
-  ItemContent,
-  ItemTitle,
-} from "../../../components/ui/item";
+import { Item, ItemMedia, ItemContent, ItemTitle } from "@/components/ui/item";
 
-type ResourceItemProps = {
+interface ResourceItemProps {
   name: string;
-  size?: string;
   icon?: ReactNode;
   className?: string;
-  variant?: "default" | "outline" | "muted";
   children?: ReactNode;
-};
+}
 
 const ResourceItem = ({
   name,
-  size,
   icon,
   className = "",
   children,

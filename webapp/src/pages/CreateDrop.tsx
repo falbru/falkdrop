@@ -46,7 +46,7 @@ const CreateDropPage = () => {
   >({
     mutationFn: createDrop,
     onSuccess: (drop: DropWithDownloadableResources) => {
-      navigate(`/${drop.id}`);
+      void navigate(`/${drop.id}`);
     },
     onError: (error: Error) => {
       toast.error(error.message || "Failed to create drop");

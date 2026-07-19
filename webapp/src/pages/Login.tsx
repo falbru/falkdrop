@@ -2,9 +2,9 @@ import { useAuth } from "../features/auth/contexts/AuthProvider";
 import { useEffect } from "react";
 import { useLocation } from "react-router";
 
-export type LocationState = {
+export interface LocationState {
   redirectUri?: string;
-};
+}
 
 export default function LoginPage() {
   const auth = useAuth();
@@ -13,9 +13,9 @@ export default function LoginPage() {
   useEffect(() => {
     if (auth) {
       const redirectUri =
-        (location.state as LocationState)?.redirectUri ??
+        (location.state as LocationState | null)?.redirectUri ??
         window.location.origin;
-      auth.login({ redirectUri });
+      void auth.login({ redirectUri });
     }
   }, [auth, location.state]);
 

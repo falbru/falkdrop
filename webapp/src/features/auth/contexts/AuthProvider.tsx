@@ -1,5 +1,5 @@
 import type { AuthProvider as AuthProviderType } from "../types";
-import { useEffect, useRef, useState, createContext, useContext } from "react";
+import { useEffect, useRef, useState, createContext, use } from "react";
 import type { ReactNode } from "react";
 
 interface AuthContextValue {
@@ -9,10 +9,10 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-type AuthProviderProps = {
+interface AuthProviderProps {
   children: ReactNode;
   provider: AuthProviderType;
-};
+}
 
 export function AuthProvider(props: AuthProviderProps) {
   const { children, provider } = props;
@@ -23,20 +23,16 @@ export function AuthProvider(props: AuthProviderProps) {
   useEffect(() => {
     if (initialized.current) return; // Ensure provider.init() isn't called twice in StrictMode
     initialized.current = true;
-    provider.init().finally(() => {
+    void provider.init().finally(() => {
       setIsLoading(false);
     });
   }, [provider]);
 
-  return (
-    <AuthContext.Provider value={{ provider, isLoading }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext value={{ provider, isLoading }}>{children}</AuthContext>;
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext);
+  const context = use(AuthContext);
   if (!context) {
     throw new Error("useAuth must be used within an AuthProvider");
   }

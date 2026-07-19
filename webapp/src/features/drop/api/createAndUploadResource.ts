@@ -16,7 +16,7 @@ const createAndUploadResource = async (
     token,
   );
 
-  const success = uploadResource(draft.uploadURL, resourceBody);
+  const success = await uploadResource(draft.uploadURL, resourceBody);
   if (!success) throw new Error();
 
   return {

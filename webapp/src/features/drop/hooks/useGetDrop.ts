@@ -1,9 +1,9 @@
-import { useQuery } from "@tanstack/react-query";
-import fetchDrop from "../api/fetchDrop";
+import { skipToken, useQuery } from "@tanstack/react-query";
+import getDrop from "../api/getDrop";
 
 const useDrop = (dropId: string | undefined) => {
   return useQuery({
-    queryFn: () => fetchDrop(dropId!),
+    queryFn: dropId ? () => getDrop(dropId) : skipToken,
     queryKey: ["drop", dropId],
     enabled: dropId !== undefined,
     refetchOnWindowFocus: false,

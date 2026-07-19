@@ -2,9 +2,9 @@ import Keycloak from "keycloak-js";
 import type { AuthProvider } from "../types";
 
 const keycloak = new Keycloak({
-  url: import.meta.env.VITE_KEYCLOAK_URL,
-  realm: import.meta.env.VITE_KEYCLOAK_REALM,
-  clientId: import.meta.env.VITE_KEYCLOAK_CLIENT_ID,
+  url: import.meta.env.VITE_KEYCLOAK_URL as string,
+  realm: import.meta.env.VITE_KEYCLOAK_REALM as string,
+  clientId: import.meta.env.VITE_KEYCLOAK_CLIENT_ID as string,
 });
 
 export function createKeycloakAuthProvider(): AuthProvider {
@@ -26,16 +26,16 @@ export function createKeycloakAuthProvider(): AuthProvider {
           }
           return authenticated;
         })
-        .catch((error) => {
+        .catch((error: unknown) => {
           console.error("Failed to initialize Keycloak:", error);
           return false;
         });
     },
     login: async (options) => {
-      keycloak.login({ redirectUri: options?.redirectUri });
+      await keycloak.login({ redirectUri: options?.redirectUri });
     },
     logout: async (options) => {
-      keycloak.logout({ redirectUri: options?.redirectUri });
+      await keycloak.logout({ redirectUri: options?.redirectUri });
     },
     isAuthenticated() {
       return keycloak.authenticated;

@@ -2,10 +2,10 @@ import { API_URL } from "../../../config/env";
 import type { UploadableResource } from "../types";
 import { toUploadableResource, type APIUploadableResource } from "./types";
 
-type CreateResourceRequest = {
+interface CreateResourceRequest {
   resource_type: string;
   name: string | null;
-};
+}
 type CreateResourceResponse = APIUploadableResource;
 
 const createResource = async (

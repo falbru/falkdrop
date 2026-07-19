@@ -3,9 +3,9 @@ import type { LocalResource } from "../types";
 import { Button } from "../../../components/ui/button";
 import { Upload } from "lucide-react";
 
-type ResourceDropZoneProps = {
+interface ResourceDropZoneProps {
   onDrop: (resource: LocalResource) => void;
-};
+}
 
 const ResourceDropZone = (props: ResourceDropZoneProps) => {
   const { onDrop } = props;
@@ -33,7 +33,9 @@ const ResourceDropZone = (props: ResourceDropZoneProps) => {
     <DropZone
       getDropOperation={() => "copy"}
       onDrop={(event) => {
-        event.items.forEach((item) => handleItemOnDrop(item));
+        event.items.forEach((item) => {
+          handleItemOnDrop(item);
+        });
       }}
       className="flex items-center justify-center bg-card p-4 w-full h-[200px] rounded-xl border-3 border-dashed border-border"
     >
@@ -42,11 +44,11 @@ const ResourceDropZone = (props: ResourceDropZoneProps) => {
           onSelect={(files) => {
             if (!files) return;
 
-            const file = files[0];
-            if (file) {
+            if (files.length > 0) {
+              // TODO support multiple file uploads
               onDrop({
                 type: "file",
-                getBody: () => Promise.resolve(file),
+                getBody: () => Promise.resolve(files[0]),
               });
             }
           }}

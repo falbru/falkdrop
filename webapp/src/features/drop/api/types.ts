@@ -5,11 +5,15 @@ import type {
   DropWithDownloadableResources,
 } from "../types";
 
-type APIResourceBase = {
+export interface APIError {
+  message: string;
+}
+
+interface APIResourceBase {
   id: string;
   type: string;
   name: string | null;
-};
+}
 
 export type APIUploadableResource = APIResourceBase & {
   upload_url: string;
@@ -50,10 +54,10 @@ export const toDownloadableResource = (
   };
 };
 
-export type APIDrop = {
+export interface APIDrop {
   id: string;
   expiration_date: string;
-};
+}
 
 export type APIDropWithDownloadableResources = APIDrop & {
   resources: APIDownloadableResource[];
@@ -63,9 +67,9 @@ export const toDropWithDownloadableResources = (
   drop: APIDropWithDownloadableResources,
 ): DropWithDownloadableResources => {
   return {
-    id: drop["id"],
-    expirationDate: new Date(drop["expiration_date"]),
-    resources: drop["resources"].map((resource) =>
+    id: drop.id,
+    expirationDate: new Date(drop.expiration_date),
+    resources: drop.resources.map((resource) =>
       toDownloadableResource(resource),
     ),
   };

@@ -1,9 +1,9 @@
 import { Link, Outlet } from "react-router";
 import { useAuth } from "../../features/auth/contexts/AuthProvider";
 
-type LayoutProps = {
+interface LayoutProps {
   showHeader?: boolean;
-};
+}
 
 const Layout = (props: LayoutProps) => {
   const { showHeader = true } = props;
@@ -24,9 +24,9 @@ const Layout = (props: LayoutProps) => {
         <Outlet />
       </main>
       <footer className="py-4 text-center">
-        {auth && auth.isAuthenticated() ? (
+        {auth?.isAuthenticated() ? (
           <button
-            onClick={() => auth.logout()}
+            onClick={() => void auth.logout()}
             className="text-sm text-text-secondary hover:text-text transition-colors"
           >
             Log out

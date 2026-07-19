@@ -34,14 +34,8 @@ const GetDropPage = () => {
       </h1>
 
       <ItemGroup title="Files">
-        {drop.data.resources.map((res, index) => (
-          <ResourceItem
-            key={res.id}
-            name={res.name ?? res.id}
-            variant={
-              index < drop.data.resources.length - 1 ? "default" : "muted"
-            }
-          >
+        {drop.data.resources.map((res) => (
+          <ResourceItem key={res.id} name={res.name ?? res.id}>
             <a href={res.downloadURL}>
               <Button variant="ghost">
                 <Download />
