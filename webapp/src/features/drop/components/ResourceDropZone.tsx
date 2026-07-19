@@ -1,6 +1,6 @@
 import { DropZone, FileTrigger, type DropItem } from "react-aria-components";
 import type { LocalResource } from "../types";
-import Button from "../../../components/ui/Button";
+import { Button } from "../../../components/ui/button";
 import { Upload } from "lucide-react";
 
 type ResourceDropZoneProps = {
@@ -35,7 +35,7 @@ const ResourceDropZone = (props: ResourceDropZoneProps) => {
       onDrop={(event) => {
         event.items.forEach((item) => handleItemOnDrop(item));
       }}
-      className="flex items-center justify-center bg-card p-4 w-full h-[250px] rounded-xl border-4 border-dashed border-border"
+      className="flex items-center justify-center bg-card p-4 w-full h-[200px] rounded-xl border-3 border-dashed border-border"
     >
       <div className="flex flex-col items-center gap-4">
         <FileTrigger
@@ -51,11 +51,11 @@ const ResourceDropZone = (props: ResourceDropZoneProps) => {
             }
           }}
         >
-          <Button variant="secondary" className="px-3 py-3">
-            <Upload size={48} />
+          <Button variant="secondary" className="px-3 py-3" size="icon-lg">
+            <Upload />
           </Button>
         </FileTrigger>
-        <div slot="label" className="text-text-muted">
+        <div slot="label" className="text-muted-foreground">
           Drop files or paste text here
         </div>
       </div>

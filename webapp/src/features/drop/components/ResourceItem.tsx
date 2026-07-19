@@ -1,33 +1,36 @@
-import type { HTMLAttributes, ReactNode } from "react";
+import type { ReactNode } from "react";
 import { File } from "lucide-react";
-import Item from "../../../components/ui/Item";
+import {
+  Item,
+  ItemMedia,
+  ItemContent,
+  ItemTitle,
+} from "../../../components/ui/item";
 
-type ResourceItemProps = HTMLAttributes<HTMLLIElement> & {
+type ResourceItemProps = {
   name: string;
   size?: string;
   icon?: ReactNode;
-  showBorder?: boolean;
+  className?: string;
+  variant?: "default" | "outline" | "muted";
+  children?: ReactNode;
 };
 
 const ResourceItem = ({
   name,
   size,
   icon,
-  showBorder = true,
   className = "",
   children,
   ...props
 }: ResourceItemProps) => {
   return (
-    <Item showBorder={showBorder} className={className} {...props}>
-      <div className="p-2 bg-border rounded-xl">
-        {icon ?? <File className="text-white/50" />}
-      </div>
-      <div className="flex flex-col min-w-0">
-        <span className="font-bold truncate">{name}</span>
-        {size && <span className="text-xs text-text-muted">{size}</span>}
-      </div>
-      <div className="flex-grow flex justify-end">{children}</div>
+    <Item className={className} {...props} variant="outline">
+      <ItemMedia variant="icon">{icon ?? <File />}</ItemMedia>
+      <ItemContent>
+        <ItemTitle>{name}</ItemTitle>
+      </ItemContent>
+      {children && <div className="flex-grow flex justify-end">{children}</div>}
     </Item>
   );
 };

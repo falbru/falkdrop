@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import Button from "../components/ui/Button";
-import ItemGroup from "../components/ui/ItemGroup";
+import { Button } from "../components/ui/button";
+import { ItemGroup } from "../components/ui/item";
 import { useAuthenticatedMutation } from "../features/auth/hooks";
 import createDrop from "../features/drop/api/createDrop";
 import createAndUploadResource from "../features/drop/api/createAndUploadResource";
@@ -13,6 +13,7 @@ import type {
   Resource,
 } from "../features/drop/types";
 import { Plus } from "lucide-react";
+import { toast } from "sonner";
 
 const CreateDropPage = () => {
   const [uploadedResources, setUploadedResources] = useState<Resource[]>([]);
@@ -26,6 +27,9 @@ const CreateDropPage = () => {
     mutationFn: createAndUploadResource,
     onSuccess: (uploadedResource: Resource) => {
       setUploadedResources([...uploadedResources, uploadedResource]);
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to upload resource");
     },
   });
 
@@ -44,6 +48,9 @@ const CreateDropPage = () => {
     onSuccess: (drop: DropWithDownloadableResources) => {
       navigate(`/${drop.id}`);
     },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to create drop");
+    },
   });
 
   const handleCreateDrop = () => {
@@ -61,13 +68,8 @@ const CreateDropPage = () => {
 
       {uploadedResources.length > 0 && (
         <ItemGroup title="Files">
-          {uploadedResources.map((res, index) => (
-            <ResourceItem
-              key={res.id}
-              name={res.name ?? res.id}
-              size="64 GB"
-              showBorder={index < uploadedResources.length - 1}
-            />
+          {uploadedResources.map((res) => (
+            <ResourceItem key={res.id} name={res.name ?? res.id} />
           ))}
         </ItemGroup>
       )}
@@ -75,16 +77,16 @@ const CreateDropPage = () => {
       <div className="flex justify-end">
         <Button
           onClick={handleCreateDrop}
-          variant="primary"
+          variant="default"
           isDisabled={uploadedResources.length === 0 || isLoading}
         >
           {isLoading ? (
             "Creating..."
           ) : (
-            <div className="flex gap-1 items-center">
+            <>
               <Plus size={18} />
               <span>Create Drop</span>
-            </div>
+            </>
           )}
         </Button>
       </div>

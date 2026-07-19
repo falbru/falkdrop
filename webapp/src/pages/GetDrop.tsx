@@ -1,14 +1,27 @@
-import { Link, useParams } from "react-router";
-import Button from "../components/ui/Button";
-import Card from "../components/ui/Card";
-import ItemGroup from "../components/ui/ItemGroup";
+import { useParams, useNavigate } from "react-router";
+import { Button } from "../components/ui/button";
+import { ItemGroup } from "../components/ui/item";
 import ResourceItem from "../features/drop/components/ResourceItem";
 import useDrop from "../features/drop/hooks/useGetDrop";
 import { Download } from "lucide-react";
+import { useEffect } from "react";
+import { toast } from "sonner";
 
 const GetDropPage = () => {
   const { dropId } = useParams();
   const drop = useDrop(dropId);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (drop.error) {
+      const errorMessage =
+        drop.error instanceof Error
+          ? drop.error.message
+          : "Error occurred while loading drop";
+      toast.error(errorMessage);
+      navigate("/");
+    }
+  }, [drop.error, navigate]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -16,24 +29,15 @@ const GetDropPage = () => {
         {drop.data?.id}
       </h1>
 
-      {drop.error ? (
-        <Card className="text-center py-8">
-          <p className="text-text-secondary">Drop not found</p>
-          <Link to="/" className="inline-block mt-4">
-            <Button variant="secondary">Go Home</Button>
-          </Link>
-        </Card>
-      ) : (
-        <></>
-      )}
-
       {drop.data && (
-        <ItemGroup title="Files" empty="No files in this drop">
+        <ItemGroup title="Files">
           {drop.data.resources.map((res, index) => (
             <ResourceItem
               key={res.id}
               name={res.name ?? res.id}
-              showBorder={index < drop.data.resources.length - 1}
+              variant={
+                index < drop.data.resources.length - 1 ? "default" : "muted"
+              }
             >
               <a href={res.downloadURL}>
                 <Button variant="ghost">
