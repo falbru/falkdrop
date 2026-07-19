@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  webapp:
+    name: Webapp Checks
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: webapp
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 10
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run format
+        run: pnpm format:check
+
+      - name: Run lint
+        run: pnpm lint
+
+      - name: Build
+        run: pnpm build
+
+  server:
+    name: Server Checks
+    runs-on: ubuntu-latest
+    needs: webapp
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+
+      - name: Format check
+        run: test -z $(gofmt -l .)
+
+      - name: Run tests
+        run: go test ./... -v
+
+      - name: Build
+        run: go build -v ./...
