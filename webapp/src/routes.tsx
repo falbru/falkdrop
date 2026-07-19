@@ -5,6 +5,7 @@ import LoginPage from "./pages/Login";
 import CreateDropPage from "./pages/CreateDrop";
 import GetDropPage from "./pages/GetDrop";
 import ProtectedRoute from "./components/shared/ProtectedRoute";
+import NotFoundPage from "./pages/NotFoundPage";
 
 const router = createBrowserRouter([
   {
@@ -34,6 +35,10 @@ const router = createBrowserRouter([
       {
         path: "/:dropId",
         Component: GetDropPage,
+      },
+      {
+        path: "*",
+        Component: NotFoundPage,
       },
     ],
   },
