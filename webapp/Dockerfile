@@ -1,6 +1,7 @@
 FROM node:24-alpine AS builder
 
 RUN corepack enable
+RUN corepack prepare pnpm@10.24 --activate
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 ENV CI=true
