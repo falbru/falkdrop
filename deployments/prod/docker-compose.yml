@@ -1,0 +1,41 @@
+services:
+  falkdrop-db:
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD
+      - POSTGRES_DB
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/
+
+  falkdrop-server:
+    image: falkdrop-server:latest
+    restart: always
+    environment:
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD
+      - POSTGRES_DB
+      - DATABASE_URL
+      - OBJECTSTORE_PROVIDER
+      - S3_BUCKET
+      - AWS_DEFAULT_REGION
+      - AWS_ACCESS_KEY_ID
+      - AWS_SECRET_ACCESS_KEY
+    ports:
+      - "8081:8081"
+
+  falkdrop-webapp:
+    image: falkdrop-webapp:latest
+    restart: always
+    environment:
+      - VITE_API_URL
+    ports:
+      - "5173:80"
+
+
+volumes:
+  postgres_data:
+    driver: local

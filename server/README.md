@@ -1,10 +1,8 @@
-# FalkDrop Webapp
+# FalkDrop Server
 
 ## Dependencies
 
-- node version 24.11.1
-
-- pnpm version 10.24.0
+- go version 1.26
 
 ## Running locally
 
@@ -15,14 +13,14 @@ cp .env.example .env
 $EDITOR .env
 ```
 
-2. Install the dependencies
+2. Migrate the database
 
 ```sh
-pnpm i
+source .env && go run cmd/migrate/main.go up
 ```
 
-3. Run the development server
+3. Run the server
 
 ```sh
-pnpm run dev
+source .env && go run cmd/server/main.go
 ```
