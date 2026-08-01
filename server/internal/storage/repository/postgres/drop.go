@@ -75,6 +75,64 @@ func (repository PostgresRepository) GetDropById(ctx context.Context, id drop.Dr
 	}, err
 }
 
+func (repository PostgresRepository) GetDropsExpiredByDate(ctx context.Context, date time.Time) ([]drop.Drop, error) {
+	queryRows, err := repository.conn.Query(ctx, "SELECT drops.id, drops.expiration_date, resources.id, resources.type, resources.name FROM drops LEFT JOIN resources ON resources.drop_id = drops.id WHERE drops.expiration_date <= $1 ORDER BY drops.id", date)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return []drop.Drop{}, nil
+		}
+
+		return nil, err
+	}
+
+	var expiredDrops []drop.Drop
+
+	var previousDropId drop.DropId
+
+	var dropId drop.DropId
+	var expirationDate time.Time
+	var resourceId *string
+	var resourceType *string
+	var resourceName *string
+	_, err = pgx.ForEachRow(queryRows, []any{&dropId, &expirationDate, &resourceId, &resourceType, &resourceName}, func() error {
+		if len(expiredDrops) == 0 || previousDropId != dropId {
+			previousDropId = dropId
+			expiredDrops = append(expiredDrops, drop.Drop{
+				Id:             dropId,
+				ExpirationDate: expirationDate,
+				Resources:      []drop.Resource{},
+			})
+		}
+
+		if resourceId != nil && resourceType != nil {
+			resource := drop.Resource{
+				Id:     drop.ResourceId(uuid.MustParse(*resourceId)), // TODO must parse is unsafe
+				Type:   drop.ResourceType(*resourceType),
+				Name:   resourceName,
+				DropId: &dropId,
+			}
+
+			expiredDrops[len(expiredDrops)-1].Resources = append(expiredDrops[len(expiredDrops)-1].Resources, resource)
+		}
+
+		return nil
+	})
+
+	return expiredDrops, err
+}
+
+func (repository PostgresRepository) DeleteDropsById(ctx context.Context, ids []drop.DropId) error {
+	idStrs := make([]string, len(ids))
+
+	for i, id := range ids {
+		idStrs[i] = string(id)
+	}
+
+	_, err := repository.conn.Exec(ctx, "DELETE FROM drops WHERE id = ANY($1)", idStrs)
+	return err
+}
+
 func (repository PostgresRepository) GetResourcesByDropId(ctx context.Context, id drop.DropId) ([]drop.Resource, error) {
 	queryRows, err := repository.conn.Query(ctx, "SELECT id, type, name FROM resources WHERE drop_id = $1", id)
 	if err != nil {

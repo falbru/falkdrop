@@ -13,6 +13,7 @@ type MockDropService struct {
 	createResourceWithUploadUrlFn     func(ctx context.Context, resourceType drop.ResourceType, name *string) (*drop.ResourceWithUploadUrl, error)
 	createDropFn                      func(ctx context.Context, resourceIds []drop.ResourceId) (*drop.DropWithResourceDownloadUrls, error)
 	getDropWithResourceDownloadUrlsFn func(ctx context.Context, dropId drop.DropId) (*drop.DropWithResourceDownloadUrls, error)
+	deleteExpiredDropsFn              func(ctx context.Context) error
 }
 
 func NewMockDropService() *MockDropService {
@@ -37,6 +38,14 @@ func (service MockDropService) CreateDrop(ctx context.Context, resourceIds []dro
 	return nil, nil
 }
 
+func (service MockDropService) DeleteExpiredDrops(ctx context.Context) error {
+	if service.deleteExpiredDropsFn != nil {
+		return service.deleteExpiredDropsFn(ctx)
+	}
+
+	return nil
+}
+
 func (service MockDropService) GetDropWithResourceDownloadUrls(ctx context.Context, dropId drop.DropId) (*drop.DropWithResourceDownloadUrls, error) {
 	if service.getDropWithResourceDownloadUrlsFn != nil {
 		return service.getDropWithResourceDownloadUrlsFn(ctx, dropId)
@@ -57,6 +66,11 @@ func (service MockDropService) WithCreateResourceWithUploadUrl(fn func(ctx conte
 
 func (service MockDropService) WithCreateDrop(fn func(ctx context.Context, resourceIds []drop.ResourceId) (*drop.DropWithResourceDownloadUrls, error)) *MockDropService {
 	service.createDropFn = fn
+	return &service
+}
+
+func (service MockDropService) WithDeleteExpiredDrops(fn func(ctx context.Context) error) *MockDropService {
+	service.deleteExpiredDropsFn = fn
 	return &service
 }
 

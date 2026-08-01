@@ -279,3 +279,256 @@ func TestCreateResourceWithUploadUrl(t *testing.T) {
 		}
 	})
 }
+
+func TestDeleteExpiredDrops(t *testing.T) {
+	t.Run("no expired drops", func(t *testing.T) {
+		repo := dropMock.NewMockDropRepository().WithGetDropsExpiredByDate(
+			func(ctx context.Context, date time.Time) ([]drop.Drop, error) {
+				return []drop.Drop{}, nil
+			},
+		)
+
+		service := getService(repo, objectStoreMock.NewMockObjectStore(), authMock.NewMockAuthService())
+
+		err := service.DeleteExpiredDrops(context.Background())
+
+		if err != nil {
+			t.Errorf("Expected no error when there are no expired drops, but got: %v", err)
+		}
+	})
+
+	t.Run("error getting expired drops", func(t *testing.T) {
+		expectedError := errors.New("database error")
+
+		repo := dropMock.NewMockDropRepository().WithGetDropsExpiredByDate(
+			func(ctx context.Context, date time.Time) ([]drop.Drop, error) {
+				return nil, expectedError
+			},
+		)
+
+		service := getService(repo, objectStoreMock.NewMockObjectStore(), authMock.NewMockAuthService())
+
+		err := service.DeleteExpiredDrops(context.Background())
+
+		if err == nil {
+			t.Errorf("Expected error when getting expired drops fails")
+		} else if !errors.Is(err, expectedError) {
+			t.Errorf("Expected error to be %v, but got: %v", expectedError, err)
+		}
+	})
+
+	t.Run("error deleting objects from object store", func(t *testing.T) {
+		dropId := drop.DropId("expired123")
+		resourceId := drop.ResourceId(uuid.New())
+		expectedError := errors.New("object store error")
+
+		repo := dropMock.NewMockDropRepository().WithGetDropsExpiredByDate(
+			func(ctx context.Context, date time.Time) ([]drop.Drop, error) {
+				return []drop.Drop{
+					{
+						Id:             dropId,
+						ExpirationDate: time.Now().Add(-time.Hour),
+						Resources: []drop.Resource{
+							{
+								Id:     resourceId,
+								Type:   drop.FileResource,
+								Name:   nil,
+								DropId: &dropId,
+							},
+						},
+					},
+				}, nil
+			},
+		)
+
+		objectStore := objectStoreMock.NewMockObjectStore().WithDeleteObjects(
+			func(ctx context.Context, ids []string) error {
+				return expectedError
+			},
+		)
+
+		service := getService(repo, objectStore, authMock.NewMockAuthService())
+
+		err := service.DeleteExpiredDrops(context.Background())
+
+		if err == nil {
+			t.Errorf("Expected error when deleting objects fails")
+		} else if !errors.Is(err, expectedError) {
+			t.Errorf("Expected error to be %v, but got: %v", expectedError, err)
+		}
+	})
+
+	t.Run("error deleting drops from repository", func(t *testing.T) {
+		dropId := drop.DropId("expired123")
+		resourceId := drop.ResourceId(uuid.New())
+		expectedError := errors.New("repository delete error")
+
+		repo := dropMock.NewMockDropRepository().
+			WithGetDropsExpiredByDate(
+				func(ctx context.Context, date time.Time) ([]drop.Drop, error) {
+					return []drop.Drop{
+						{
+							Id:             dropId,
+							ExpirationDate: time.Now().Add(-time.Hour),
+							Resources: []drop.Resource{
+								{
+									Id:     resourceId,
+									Type:   drop.FileResource,
+									Name:   nil,
+									DropId: &dropId,
+								},
+							},
+						},
+					}, nil
+				},
+			).
+			WithDeleteDropsById(
+				func(ctx context.Context, ids []drop.DropId) error {
+					return expectedError
+				},
+			)
+
+		service := getService(repo, objectStoreMock.NewMockObjectStore(), authMock.NewMockAuthService())
+
+		err := service.DeleteExpiredDrops(context.Background())
+
+		if err == nil {
+			t.Errorf("Expected error when deleting drops fails")
+		} else if !errors.Is(err, expectedError) {
+			t.Errorf("Expected error to be %v, but got: %v", expectedError, err)
+		}
+	})
+
+	t.Run("success - single expired drop", func(t *testing.T) {
+		dropId := drop.DropId("expired123")
+		resourceId := drop.ResourceId(uuid.New())
+
+		var deletedDropIds []drop.DropId
+		var deletedResourceIds []string
+
+		repo := dropMock.NewMockDropRepository().
+			WithGetDropsExpiredByDate(
+				func(ctx context.Context, date time.Time) ([]drop.Drop, error) {
+					return []drop.Drop{
+						{
+							Id:             dropId,
+							ExpirationDate: time.Now().Add(-time.Hour),
+							Resources: []drop.Resource{
+								{
+									Id:     resourceId,
+									Type:   drop.FileResource,
+									Name:   nil,
+									DropId: &dropId,
+								},
+							},
+						},
+					}, nil
+				},
+			).
+			WithDeleteDropsById(
+				func(ctx context.Context, ids []drop.DropId) error {
+					deletedDropIds = ids
+					return nil
+				},
+			)
+
+		objectStore := objectStoreMock.NewMockObjectStore().WithDeleteObjects(
+			func(ctx context.Context, ids []string) error {
+				deletedResourceIds = ids
+				return nil
+			},
+		)
+
+		service := getService(repo, objectStore, authMock.NewMockAuthService())
+
+		err := service.DeleteExpiredDrops(context.Background())
+
+		if err != nil {
+			t.Fatalf("Expected no error for successful deletion, but got: %v", err)
+		}
+
+		if len(deletedDropIds) != 1 {
+			t.Errorf("Expected 1 drop to be deleted, but got: %d", len(deletedDropIds))
+		} else if deletedDropIds[0] != dropId {
+			t.Errorf("Expected dropId %v to be deleted, but got: %v", dropId, deletedDropIds[0])
+		}
+
+		if len(deletedResourceIds) != 1 {
+			t.Errorf("Expected 1 resource to be deleted, but got: %d", len(deletedResourceIds))
+		} else if deletedResourceIds[0] != resourceId.String() {
+			t.Errorf("Expected resourceId %v to be deleted, but got: %v", resourceId.String(), deletedResourceIds[0])
+		}
+	})
+
+	t.Run("success - multiple expired drops", func(t *testing.T) {
+		dropId1 := drop.DropId("expired123")
+		dropId2 := drop.DropId("expired456")
+		resourceId1 := drop.ResourceId(uuid.New())
+		resourceId2 := drop.ResourceId(uuid.New())
+
+		var deletedDropIds []drop.DropId
+		var deletedResourceIds []string
+
+		repo := dropMock.NewMockDropRepository().
+			WithGetDropsExpiredByDate(
+				func(ctx context.Context, date time.Time) ([]drop.Drop, error) {
+					return []drop.Drop{
+						{
+							Id:             dropId1,
+							ExpirationDate: time.Now().Add(-time.Hour),
+							Resources: []drop.Resource{
+								{
+									Id:     resourceId1,
+									Type:   drop.FileResource,
+									Name:   nil,
+									DropId: &dropId1,
+								},
+							},
+						},
+						{
+							Id:             dropId2,
+							ExpirationDate: time.Now().Add(-2 * time.Hour),
+							Resources: []drop.Resource{
+								{
+									Id:     resourceId2,
+									Type:   drop.FileResource,
+									Name:   nil,
+									DropId: &dropId2,
+								},
+							},
+						},
+					}, nil
+				},
+			).
+			WithDeleteDropsById(
+				func(ctx context.Context, ids []drop.DropId) error {
+					deletedDropIds = ids
+					return nil
+				},
+			)
+
+		objectStore := objectStoreMock.NewMockObjectStore().WithDeleteObjects(
+			func(ctx context.Context, ids []string) error {
+				deletedResourceIds = append(deletedResourceIds, ids...)
+				return nil
+			},
+		)
+
+		service := getService(repo, objectStore, authMock.NewMockAuthService())
+
+		err := service.DeleteExpiredDrops(context.Background())
+
+		if err != nil {
+			t.Fatalf("Expected no error for successful deletion, but got: %v", err)
+		}
+
+		if len(deletedDropIds) != 2 {
+			t.Errorf("Expected 2 drops to be deleted, but got: %d", len(deletedDropIds))
+		}
+
+		if len(deletedResourceIds) != 2 {
+			t.Errorf("Expected 2 resources to be deleted, but got: %d", len(deletedResourceIds))
+		}
+	})
+
+}

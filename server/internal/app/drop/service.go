@@ -16,6 +16,7 @@ type DropService interface {
 	CreateResourceWithUploadUrl(ctx context.Context, resourceType ResourceType, name *string) (*ResourceWithUploadUrl, error)
 	CreateDrop(ctx context.Context, resourceIds []ResourceId) (*DropWithResourceDownloadUrls, error)
 	GetDropWithResourceDownloadUrls(ctx context.Context, dropId DropId) (*DropWithResourceDownloadUrls, error)
+	DeleteExpiredDrops(ctx context.Context) error
 }
 
 type dropServiceImpl struct {
@@ -202,6 +203,40 @@ func (service dropServiceImpl) GetDropWithResourceDownloadUrls(ctx context.Conte
 		ExpirationDate: drop.ExpirationDate,
 		Resources:      resourcesWithDownloadUrls,
 	}, err
+}
+
+func (service dropServiceImpl) DeleteExpiredDrops(ctx context.Context) error {
+	expiredDrops, err := service.repository.GetDropsExpiredByDate(ctx, time.Now())
+	if err != nil {
+		return err
+	}
+
+	var errs error = nil
+
+	deletedDropIds := make([]DropId, 0, len(expiredDrops))
+	for _, expiredDrop := range expiredDrops {
+		resourceIds := make([]string, len(expiredDrop.Resources))
+
+		for i, resource := range expiredDrop.Resources {
+			resourceIds[i] = resource.Id.String()
+		}
+
+		err := service.objectStore.DeleteObjects(ctx, resourceIds)
+		if err == nil {
+			deletedDropIds = append(deletedDropIds, expiredDrop.Id)
+		} else {
+			errs = errors.Join(errs, err)
+		}
+
+		// TODO delete resources in DB that were successfully deleted by the object store, even if an error occured
+	}
+
+	err = service.repository.DeleteDropsById(ctx, deletedDropIds)
+	if err != nil {
+		errs = errors.Join(errs, err)
+	}
+
+	return errs
 }
 
 func (service dropServiceImpl) withDownloadUrls(ctx context.Context, resources []Resource) ([]ResourceWithDownloadUrl, error) {

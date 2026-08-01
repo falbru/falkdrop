@@ -69,3 +69,31 @@ func (store S3Store) CreateBucket(ctx context.Context) error {
 
 	return awsS3.NewBucketExistsWaiter(store.client).Wait(ctx, &awsS3.HeadBucketInput{Bucket: aws.String(store.bucket)}, time.Minute)
 }
+
+func (store S3Store) DeleteObject(ctx context.Context, id string) error {
+	_, err := store.client.DeleteObject(ctx, &awsS3.DeleteObjectInput{
+		Bucket: aws.String(store.bucket),
+		Key:    aws.String(id),
+	})
+
+	return err
+}
+
+func (store S3Store) DeleteObjects(ctx context.Context, ids []string) error {
+	objectIdentifiers := make([]types.ObjectIdentifier, len(ids))
+	for i, id := range ids {
+		objectIdentifiers[i] = types.ObjectIdentifier{
+			Key: aws.String(id),
+		}
+	}
+
+	_, err := store.client.DeleteObjects(ctx, &awsS3.DeleteObjectsInput{
+		Bucket: aws.String(store.bucket),
+		Delete: &types.Delete{
+			Objects: objectIdentifiers,
+			Quiet:   aws.Bool(true),
+		},
+	})
+
+	return err
+}

@@ -8,9 +8,11 @@ import (
 )
 
 type MockDropRepository struct {
-	getResourcesByIdsFn  func(ctx context.Context, ids []drop.ResourceId) ([]drop.Resource, error)
-	getDropByIdFn        func(ctx context.Context, id drop.DropId) (*drop.Drop, error)
-	withCreateResourceFn func(ctx context.Context, id drop.ResourceId, resourceType drop.ResourceType, name *string) error
+	getResourcesByIdsFn     func(ctx context.Context, ids []drop.ResourceId) ([]drop.Resource, error)
+	getDropByIdFn           func(ctx context.Context, id drop.DropId) (*drop.Drop, error)
+	getDropsExpiredByDateFn func(ctx context.Context, date time.Time) ([]drop.Drop, error)
+	withCreateResourceFn    func(ctx context.Context, id drop.ResourceId, resourceType drop.ResourceType, name *string) error
+	deleteDropsByIdFn       func(ctx context.Context, ids []drop.DropId) error
 }
 
 func NewMockDropRepository() MockDropRepository {
@@ -33,6 +35,22 @@ func (repo MockDropRepository) GetDropById(ctx context.Context, id drop.DropId) 
 	return nil, nil
 }
 
+func (repo MockDropRepository) GetDropsExpiredByDate(ctx context.Context, date time.Time) ([]drop.Drop, error) {
+	if repo.getDropsExpiredByDateFn != nil {
+		return repo.getDropsExpiredByDateFn(ctx, date)
+	}
+
+	return []drop.Drop{}, nil
+}
+
+func (repo MockDropRepository) DeleteDropsById(ctx context.Context, ids []drop.DropId) error {
+	if repo.deleteDropsByIdFn != nil {
+		return repo.deleteDropsByIdFn(ctx, ids)
+	}
+
+	return nil
+}
+
 func (repo MockDropRepository) GetResourcesByDropId(ctx context.Context, id drop.DropId) ([]drop.Resource, error) {
 	return []drop.Resource{}, nil
 }
@@ -50,13 +68,23 @@ func (repo MockDropRepository) IsUniqueDropId(ctx context.Context, id drop.DropI
 
 }
 
+func (repo MockDropRepository) WithGetDropById(fn func(ctx context.Context, id drop.DropId) (*drop.Drop, error)) MockDropRepository {
+	repo.getDropByIdFn = fn
+	return repo
+}
+
 func (repo MockDropRepository) WithGetResourcesByIds(fn func(ctx context.Context, ids []drop.ResourceId) ([]drop.Resource, error)) MockDropRepository {
 	repo.getResourcesByIdsFn = fn
 	return repo
 }
 
-func (repo MockDropRepository) WithGetDropById(fn func(ctx context.Context, id drop.DropId) (*drop.Drop, error)) MockDropRepository {
-	repo.getDropByIdFn = fn
+func (repo MockDropRepository) WithGetDropsExpiredByDate(fn func(ctx context.Context, date time.Time) ([]drop.Drop, error)) MockDropRepository {
+	repo.getDropsExpiredByDateFn = fn
+	return repo
+}
+
+func (repo MockDropRepository) WithDeleteDropsById(fn func(ctx context.Context, ids []drop.DropId) error) MockDropRepository {
+	repo.deleteDropsByIdFn = fn
 	return repo
 }
 

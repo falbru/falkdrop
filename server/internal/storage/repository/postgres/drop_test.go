@@ -217,6 +217,41 @@ func TestPostgresRepository(t *testing.T) {
 		}
 	})
 
+	t.Run("GetDropsExpiredByDate", func(t *testing.T) {
+		ctx := context.Background()
+
+		drops, err := repo.GetDropsExpiredByDate(ctx, time.Date(2026, time.January, 1, 1, 1, 1, 1, time.UTC))
+		if err != nil {
+			t.Fatalf("Failed to get expired drops after date: %v", err.Error())
+		}
+
+		if len(drops) != 2 {
+			t.Fatalf("Expected to get two expired drops, but got: %v", len(drops))
+		}
+
+		for _, drop := range drops {
+			if drop.Id == "expd1" {
+				if drop.ExpirationDate.Year() != 2000 || drop.ExpirationDate.Month() != 1 || drop.ExpirationDate.Day() != 1 {
+					t.Fatalf("Expected expirationDate for expd1 to be 2000-01-01, but got: %v", drop.ExpirationDate.Format("2000-01-01"))
+				}
+
+				if len(drop.Resources) != 2 {
+					t.Fatalf("Expected expd1 to have 2 resources, but got: %v", len(drop.Resources))
+				}
+			} else if drop.Id == "expd2" {
+				if drop.ExpirationDate.Year() != 2005 || drop.ExpirationDate.Month() != 1 || drop.ExpirationDate.Day() != 1 {
+					t.Fatalf("Expected expirationDate for expd2 to be 2000-01-01, but got: %v", drop.ExpirationDate.Format("2000-01-01"))
+				}
+
+				if len(drop.Resources) != 1 {
+					t.Fatalf("Expected expd2 to have 2 resources, but got: %v", len(drop.Resources))
+				}
+			} else {
+				t.Fatalf("Did not expect to get drop: %v", drop.Id)
+			}
+		}
+	})
+
 	t.Run("GetResourcesByIds", func(t *testing.T) {
 		ctx := context.Background()
 		resourceIds := []drop.ResourceId{drop.ResourceId(uuid.MustParse("11111111-1111-1111-1111-111111111111")), drop.ResourceId(uuid.MustParse("22222222-2222-2222-2222-222222222222"))}

@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"net"
 	"net/http"
 	"os"
@@ -15,6 +16,7 @@ import (
 	"github.com/falbru/falkdrop/internal/storage/objectstore"
 	"github.com/falbru/falkdrop/internal/storage/objectstore/s3"
 	"github.com/falbru/falkdrop/internal/storage/repository/postgres"
+	"github.com/go-co-op/gocron/v2"
 
 	"github.com/rs/cors"
 )
@@ -75,6 +77,12 @@ func main() {
 		os.Exit(1)
 	}
 
+	scheduler, err := gocron.NewScheduler()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: Failed to setup cron scheduler: %s", err.Error())
+		os.Exit(1)
+	}
+
 	authService := authService.NewAuthService(provider)
 	dropService := drop.NewDropService(repository, objectStore, authService)
 
@@ -94,5 +102,17 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Error: %s", err.Error())
 		os.Exit(1)
 	}
+
+	job, err := drop.RegisterJobs(scheduler, dropService)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: Failed to setup drop jobs: %s", err.Error())
+		os.Exit(1)
+	}
+	slog.Info("started drop job", "ID", job.ID().String())
+
+	scheduler.Start()
+	defer scheduler.Shutdown()
+
+	slog.Info("Server starting on http://localhost:8082")
 	http.Serve(l, c.Handler(mux))
 }
