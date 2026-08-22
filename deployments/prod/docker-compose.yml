@@ -7,35 +7,74 @@ services:
       - POSTGRES_PASSWORD
       - POSTGRES_DB
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/
+      - falkdrop_db_data:/var/lib/postgresql/
 
   falkdrop-server:
-    image: falkdrop-server:latest
+    image: ghcr.io/falbru/falkdrop-server:88cddf2
     restart: always
     environment:
-      - POSTGRES_USER
-      - POSTGRES_PASSWORD
-      - POSTGRES_DB
       - DATABASE_URL
       - OBJECTSTORE_PROVIDER
       - S3_BUCKET
       - AWS_DEFAULT_REGION
       - AWS_ACCESS_KEY_ID
       - AWS_SECRET_ACCESS_KEY
+      - KEYCLOAK_REALM_URL
+      - KEYCLOAK_CLIENT_ID
     ports:
-      - "8081:8081"
+      - "8082:8082"
+    depends_on:
+      - falkdrop-db
+      - keycloak
 
   falkdrop-webapp:
-    image: falkdrop-webapp:latest
+    image: ghcr.io/falbru/falkdrop-webapp:88cddf2
     restart: always
     environment:
       - VITE_API_URL
     ports:
       - "5173:80"
+    depends_on:
+      - keycloak
 
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.6.4
+    command: start
+    environment:
+      - KC_HOSTNAME=keycloak.falbru.dev
+      - KC_HTTP_ENABLED=true
+      - KC_HEALTH_ENABLED=true
+      - KC_DB=postgres
+      - KC_DB_URL_HOST=keycloak-db
+      - KC_DB_USERNAME
+      - KC_DB_PASSWORD
+      - KC_PROXY=reencrypt
+      - KC_PROXY_HEADERS=xforwarded
+      - KC_BOOTSTRAP_ADMIN_USERNAME
+      - KC_BOOTSTRAP_ADMIN_PASSWORD
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    volumes:
+      - keycloak_data:/opt/keycloak/data/
+    depends_on:
+      - keycloak-db
+
+  keycloak-db:
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      - POSTGRES_DB=keycloak
+      - POSTGRES_USER=${KC_DB_USERNAME}
+      - POSTGRES_PASSWORD=${KC_DB_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - keycloak_db_data:/var/lib/postgresql/
 
 volumes:
-  postgres_data:
-    driver: local
+  falkdrop_db_data:
+  keycloak_data:
+  keycloak_db_data:
