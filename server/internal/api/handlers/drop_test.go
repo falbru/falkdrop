@@ -408,8 +408,8 @@ func TestCreateDrop(t *testing.T) {
 		if response.Id != "12345" {
 			t.Errorf("Expected drop id '12345', but got '%v'", response.Id)
 		}
-		if response.ExpirationDate != "2030-01-01 00:00:00 +0000 UTC" {
-			t.Errorf("Expected expiration date '2030-01-01 00:00:00 +0000', but got '%v'", response.ExpirationDate)
+		if response.ExpirationDate != expirationDate.Format(time.RFC3339) {
+			t.Errorf("Expected expiration date '%v', but got '%v'", expirationDate.Format(time.RFC3339), response.ExpirationDate)
 		}
 		if len(response.Resources) != 1 {
 			t.Errorf("Expected 1 resource, but got %v", len(response.Resources))

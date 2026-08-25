@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	httperror "github.com/falbru/falkdrop/internal/api/errors"
 	"github.com/falbru/falkdrop/internal/app/auth"
@@ -71,7 +72,7 @@ func (handler DropHandler) Get(w http.ResponseWriter, r *http.Request) error {
 
 	response := DropWithResourceDownloadUrlsDTO{
 		Id:             string(d.Id),
-		ExpirationDate: d.ExpirationDate.String(),
+		ExpirationDate: d.ExpirationDate.Format(time.RFC3339),
 		Resources:      resourcesWithDownloadUrls,
 	}
 
@@ -150,7 +151,7 @@ func (handler DropHandler) Create(w http.ResponseWriter, r *http.Request) error 
 	response :=
 		DropWithResourceDownloadUrlsDTO{
 			Id:             string(drp.Id),
-			ExpirationDate: drp.ExpirationDate.String(),
+			ExpirationDate: drp.ExpirationDate.Format(time.RFC3339),
 			Resources:      resourcesWithDownloadUrls,
 		}
 
