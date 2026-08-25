@@ -5,7 +5,7 @@ export type Duration = string;
 
 interface ExpiryDurationSelectProps {
   onSelectionChange: (duration: Duration) => void;
-};
+}
 
 const ExpiryDurationSelect = (props: ExpiryDurationSelectProps) => {
   const durations = [

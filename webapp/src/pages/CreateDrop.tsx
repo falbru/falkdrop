@@ -75,7 +75,7 @@ const CreateDropPage = () => {
     createResourceMutation.isPending || createDropMutation.isPending;
 
   return (
-    <div className="flex flex-col gap-6 items-stretch">
+    <div className="flex flex-col gap-8 items-stretch">
       <ResourceDropZone onDrop={handleOnDrop} />
 
       {uploadedResources.length > 0 && (

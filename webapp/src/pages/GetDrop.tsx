@@ -59,6 +59,16 @@ const QrCodeDialog = ({ link }: QrCodeDialogProps) => (
   </DialogTrigger>
 );
 
+const formatExpirationDate = (expirationDate: Date): string => {
+  return expirationDate.toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
 const GetDropPage = () => {
   const { dropId } = useParams();
   const drop = useDrop(dropId);
@@ -91,7 +101,7 @@ const GetDropPage = () => {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-8">
       <h1 className="font-(family-name:--font-title) text-8xl font-bold text-center text-text uppercase">
         {drop.data.id}
       </h1>
@@ -117,6 +127,10 @@ const GetDropPage = () => {
           </ResourceItem>
         ))}
       </ItemGroup>
+
+      <p className="text-center">
+        Expires at <b>{formatExpirationDate(drop.data.expirationDate)}</b>
+      </p>
     </div>
   );
 };
