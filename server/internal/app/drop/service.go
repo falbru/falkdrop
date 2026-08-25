@@ -14,7 +14,7 @@ import (
 
 type DropService interface {
 	CreateResourceWithUploadUrl(ctx context.Context, resourceType ResourceType, name *string) (*ResourceWithUploadUrl, error)
-	CreateDrop(ctx context.Context, resourceIds []ResourceId) (*DropWithResourceDownloadUrls, error)
+	CreateDrop(ctx context.Context, resourceIds []ResourceId, expiryDuration time.Duration) (*DropWithResourceDownloadUrls, error)
 	GetDropWithResourceDownloadUrls(ctx context.Context, dropId DropId) (*DropWithResourceDownloadUrls, error)
 	DeleteExpiredDrops(ctx context.Context) error
 }
@@ -107,7 +107,7 @@ func (service dropServiceImpl) CreateResourceWithUploadUrl(ctx context.Context, 
 	}, nil
 }
 
-func (service dropServiceImpl) CreateDrop(ctx context.Context, resourceIds []ResourceId) (*DropWithResourceDownloadUrls, error) {
+func (service dropServiceImpl) CreateDrop(ctx context.Context, resourceIds []ResourceId, expiryDuration time.Duration) (*DropWithResourceDownloadUrls, error) {
 	switch ctx.Value("token").(type) {
 	case string:
 		break
@@ -130,12 +130,16 @@ func (service dropServiceImpl) CreateDrop(ctx context.Context, resourceIds []Res
 		return nil, errors.New("resourceIds can't be empty")
 	}
 
+	if expiryDuration < 5*time.Minute {
+		return nil, errors.New("expiryDuration must be at least 5 minutes")
+	}
+
 	id, err := service.genUniqueDropId(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	expirationDate := time.Now().Add(time.Hour * 24 * 30)
+	expirationDate := time.Now().Add(expiryDuration)
 
 	// TODO verify if resources are uploaded and not empty?
 

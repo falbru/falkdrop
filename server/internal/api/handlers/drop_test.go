@@ -142,7 +142,7 @@ func TestCreateDrop(t *testing.T) {
 		dropService := mock.NewMockDropService()
 		dropHandler := handlers.NewDropHandler(dropService)
 
-		reqBody := `{"resource_ids": ["` + resourceId.String() + `"]}`
+		reqBody := `{"resource_ids": ["` + resourceId.String() + `"], "expiry_duration": "P1D"}`
 		req := httptest.NewRequest(http.MethodPost, "/drop", strings.NewReader(reqBody))
 		w := httptest.NewRecorder()
 
@@ -165,13 +165,13 @@ func TestCreateDrop(t *testing.T) {
 
 	t.Run("unauthorized user", func(t *testing.T) {
 		resourceId := drop.ResourceId(uuid.New())
-		dropService := mock.NewMockDropService().WithCreateDrop(func(ctx context.Context, resourceIds []drop.ResourceId) (*drop.DropWithResourceDownloadUrls, error) {
+		dropService := mock.NewMockDropService().WithCreateDrop(func(ctx context.Context, resourceIds []drop.ResourceId, expiryDuration time.Duration) (*drop.DropWithResourceDownloadUrls, error) {
 			return nil, auth.ErrUnauthorized
 		})
 
 		dropHandler := handlers.NewDropHandler(dropService)
 
-		reqBody := `{"resource_ids": ["` + resourceId.String() + `"]}`
+		reqBody := `{"resource_ids": ["` + resourceId.String() + `"], "expiry_duration": "P1D"}`
 		req := httptest.NewRequest(http.MethodPost, "/drop", strings.NewReader(reqBody))
 		req.Header.Set("Authorization", "Bearer test-token")
 		w := httptest.NewRecorder()
@@ -222,7 +222,7 @@ func TestCreateDrop(t *testing.T) {
 		dropService := mock.NewMockDropService()
 		dropHandler := handlers.NewDropHandler(dropService)
 
-		reqBody := `{"resource_ids": []}`
+		reqBody := `{"resource_ids": [], "expiry_duration": "P1D" }`
 		req := httptest.NewRequest(http.MethodPost, "/drop", strings.NewReader(reqBody))
 		req.Header.Set("Authorization", "Bearer test-token")
 		w := httptest.NewRecorder()
@@ -248,14 +248,66 @@ func TestCreateDrop(t *testing.T) {
 		}
 	})
 
+	t.Run("empty expiry duration", func(t *testing.T) {
+		dropService := mock.NewMockDropService()
+		dropHandler := handlers.NewDropHandler(dropService)
+
+		reqBody := `{"resource_ids": ["11111111-1111-1111-1111-111111111111"], "expiry_duration": ""}`
+		req := httptest.NewRequest(http.MethodPost, "/drop", strings.NewReader(reqBody))
+		req.Header.Set("Authorization", "Bearer test-token")
+		w := httptest.NewRecorder()
+
+		err := dropHandler.Create(w, req)
+		if err == nil {
+			t.Errorf("Expected drop handler to throw error")
+			return
+		}
+
+		var httpError httperror.HTTPError
+		if !errors.As(err, &httpError) {
+			t.Errorf("Expected drop handler to throw httperror")
+			return
+		}
+
+		if httpError.Code != http.StatusBadRequest {
+			t.Errorf("Expected drop handler to throw %v httperror, but got %v", http.StatusBadRequest, httpError.Code)
+		}
+	})
+
+	t.Run("invalid expiry duration", func(t *testing.T) {
+		dropService := mock.NewMockDropService()
+		dropHandler := handlers.NewDropHandler(dropService)
+
+		reqBody := `{"resource_ids": ["11111111-1111-1111-1111-111111111111"], "expiry_duration": "INVALID"}`
+		req := httptest.NewRequest(http.MethodPost, "/drop", strings.NewReader(reqBody))
+		req.Header.Set("Authorization", "Bearer test-token")
+		w := httptest.NewRecorder()
+
+		err := dropHandler.Create(w, req)
+		if err == nil {
+			t.Errorf("Expected drop handler to throw error")
+			return
+		}
+
+		var httpError httperror.HTTPError
+		if !errors.As(err, &httpError) {
+			t.Errorf("Expected drop handler to throw httperror")
+			return
+		}
+
+		if httpError.Code != http.StatusBadRequest {
+			t.Errorf("Expected drop handler to throw %v httperror, but got %v", http.StatusBadRequest, httpError.Code)
+		}
+	})
+
 	t.Run("one or more resources do not exist", func(t *testing.T) {
 		resourceId := drop.ResourceId(uuid.New())
-		dropService := mock.NewMockDropService().WithCreateDrop(func(ctx context.Context, resourceIds []drop.ResourceId) (*drop.DropWithResourceDownloadUrls, error) {
+		dropService := mock.NewMockDropService().WithCreateDrop(func(ctx context.Context, resourceIds []drop.ResourceId, expiryDuration time.Duration) (*drop.DropWithResourceDownloadUrls, error) {
 			return nil, drop.ErrResourcesNotFound{ResourceIds: []drop.ResourceId{resourceId}}
 		})
 		dropHandler := handlers.NewDropHandler(dropService)
 
-		reqBody := `{"resource_ids": ["` + resourceId.String() + `"]}`
+		reqBody := `{"resource_ids": ["` + resourceId.String() + `"], "expiry_duration": "P1D"}`
 		req := httptest.NewRequest(http.MethodPost, "/drop", strings.NewReader(reqBody))
 		req.Header.Set("Authorization", "Bearer test-token")
 		w := httptest.NewRecorder()
@@ -280,7 +332,7 @@ func TestCreateDrop(t *testing.T) {
 	t.Run("one or more resource already belongs to another drop", func(t *testing.T) {
 		resourceId := drop.ResourceId(uuid.New())
 		existingDropId := drop.DropId("existing-drop-id")
-		dropService := mock.NewMockDropService().WithCreateDrop(func(ctx context.Context, resourceIds []drop.ResourceId) (*drop.DropWithResourceDownloadUrls, error) {
+		dropService := mock.NewMockDropService().WithCreateDrop(func(ctx context.Context, resourceIds []drop.ResourceId, expiryDuration time.Duration) (*drop.DropWithResourceDownloadUrls, error) {
 			return nil, drop.ErrResourceAlreadyBelongsToDrop{ResourceId: resourceId, DropId: existingDropId}
 		})
 		dropHandler := handlers.NewDropHandler(dropService)
@@ -313,7 +365,7 @@ func TestCreateDrop(t *testing.T) {
 		resourceName := "myfile.txt"
 		resourceDownloadUrl := "http://example.org/download"
 
-		dropService := mock.NewMockDropService().WithCreateDrop(func(ctx context.Context, resourceIds []drop.ResourceId) (*drop.DropWithResourceDownloadUrls, error) {
+		dropService := mock.NewMockDropService().WithCreateDrop(func(ctx context.Context, resourceIds []drop.ResourceId, expiryDuration time.Duration) (*drop.DropWithResourceDownloadUrls, error) {
 			return &drop.DropWithResourceDownloadUrls{
 				Id:             "12345",
 				ExpirationDate: expirationDate,
@@ -332,7 +384,7 @@ func TestCreateDrop(t *testing.T) {
 		})
 		dropHandler := handlers.NewDropHandler(dropService)
 
-		reqBody := `{"resource_ids": ["11111111-1111-1111-1111-111111111111"]}`
+		reqBody := `{"resource_ids": ["11111111-1111-1111-1111-111111111111"], "expiry_duration": "P1D"}`
 		req := httptest.NewRequest(http.MethodPost, "/drop", strings.NewReader(reqBody))
 		req.Header.Set("Authorization", "Bearer test-token")
 		w := httptest.NewRecorder()

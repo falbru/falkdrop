@@ -2,6 +2,7 @@ package mock
 
 import (
 	"context"
+	"time"
 
 	"github.com/falbru/falkdrop/internal/app/auth"
 	authMock "github.com/falbru/falkdrop/internal/app/auth/mock"
@@ -11,7 +12,7 @@ import (
 type MockDropService struct {
 	authService                       auth.AuthService
 	createResourceWithUploadUrlFn     func(ctx context.Context, resourceType drop.ResourceType, name *string) (*drop.ResourceWithUploadUrl, error)
-	createDropFn                      func(ctx context.Context, resourceIds []drop.ResourceId) (*drop.DropWithResourceDownloadUrls, error)
+	createDropFn                      func(ctx context.Context, resourceIds []drop.ResourceId, expiryDuration time.Duration) (*drop.DropWithResourceDownloadUrls, error)
 	getDropWithResourceDownloadUrlsFn func(ctx context.Context, dropId drop.DropId) (*drop.DropWithResourceDownloadUrls, error)
 	deleteExpiredDropsFn              func(ctx context.Context) error
 }
@@ -30,9 +31,9 @@ func (service MockDropService) CreateResourceWithUploadUrl(ctx context.Context, 
 	return nil, nil
 }
 
-func (service MockDropService) CreateDrop(ctx context.Context, resourceIds []drop.ResourceId) (*drop.DropWithResourceDownloadUrls, error) {
+func (service MockDropService) CreateDrop(ctx context.Context, resourceIds []drop.ResourceId, expiryDuration time.Duration) (*drop.DropWithResourceDownloadUrls, error) {
 	if service.createDropFn != nil {
-		return service.createDropFn(ctx, resourceIds)
+		return service.createDropFn(ctx, resourceIds, expiryDuration)
 	}
 
 	return nil, nil
@@ -64,7 +65,7 @@ func (service MockDropService) WithCreateResourceWithUploadUrl(fn func(ctx conte
 	return &service
 }
 
-func (service MockDropService) WithCreateDrop(fn func(ctx context.Context, resourceIds []drop.ResourceId) (*drop.DropWithResourceDownloadUrls, error)) *MockDropService {
+func (service MockDropService) WithCreateDrop(fn func(ctx context.Context, resourceIds []drop.ResourceId, expiryDuration time.Duration) (*drop.DropWithResourceDownloadUrls, error)) *MockDropService {
 	service.createDropFn = fn
 	return &service
 }

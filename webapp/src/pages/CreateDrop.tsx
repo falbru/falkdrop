@@ -3,7 +3,9 @@ import { useNavigate } from "react-router";
 import { Button } from "../components/ui/button";
 import { ItemGroup } from "../components/ui/item";
 import { useAuthenticatedMutation } from "../features/auth/hooks";
-import createDrop from "../features/drop/api/createDrop";
+import createDrop, {
+  type CreateDropRequest,
+} from "../features/drop/api/createDrop";
 import createAndUploadResource from "../features/drop/api/createAndUploadResource";
 import ResourceDropZone from "../features/drop/components/ResourceDropZone";
 import ResourceItem from "../features/drop/components/ResourceItem";
@@ -14,9 +16,14 @@ import type {
 } from "../features/drop/types";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
+import ExpiryDurationSelect, {
+  type Duration,
+} from "@/features/drop/components/ExpiryDurationSelect";
+import { Label } from "@/components/ui/label";
 
 const CreateDropPage = () => {
   const [uploadedResources, setUploadedResources] = useState<Resource[]>([]);
+  const [expiryDuration, setExpiryDuration] = useState<Duration>("PT10M");
 
   const createResourceMutation = useAuthenticatedMutation<
     Resource,
@@ -33,6 +40,10 @@ const CreateDropPage = () => {
     },
   });
 
+  const handleSetExpiryDuration = (duration: Duration) => {
+    setExpiryDuration(duration);
+  };
+
   const handleOnDrop = (resource: LocalResource) => {
     createResourceMutation.mutate(resource);
   };
@@ -40,7 +51,7 @@ const CreateDropPage = () => {
   const navigate = useNavigate();
   const createDropMutation = useAuthenticatedMutation<
     DropWithDownloadableResources,
-    { resource_ids: string[] },
+    CreateDropRequest,
     unknown,
     Error
   >({
@@ -56,6 +67,7 @@ const CreateDropPage = () => {
   const handleCreateDrop = () => {
     createDropMutation.mutate({
       resource_ids: uploadedResources.map((res) => res.id),
+      expiry_duration: expiryDuration,
     });
   };
 
@@ -63,7 +75,7 @@ const CreateDropPage = () => {
     createResourceMutation.isPending || createDropMutation.isPending;
 
   return (
-    <div className="flex flex-col gap-4 items-stretch">
+    <div className="flex flex-col gap-6 items-stretch">
       <ResourceDropZone onDrop={handleOnDrop} />
 
       {uploadedResources.length > 0 && (
@@ -73,6 +85,11 @@ const CreateDropPage = () => {
           ))}
         </ItemGroup>
       )}
+
+      <div className="flex flex-col gap-2">
+        <Label>Expire In</Label>
+        <ExpiryDurationSelect onSelectionChange={handleSetExpiryDuration} />
+      </div>
 
       <div className="flex justify-end">
         <Button

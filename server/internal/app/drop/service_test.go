@@ -3,6 +3,7 @@ package drop_test
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -34,7 +35,7 @@ func TestCreateDrop(t *testing.T) {
 
 		service := getService(dropMock.NewMockDropRepository(), objectStoreMock.NewMockObjectStore(), authService)
 
-		_, err := service.CreateDrop(contextWithToken(), []drop.ResourceId{})
+		_, err := service.CreateDrop(contextWithToken(), []drop.ResourceId{}, time.Hour)
 
 		if err == nil {
 			t.Errorf("Expected service to throw error")
@@ -46,12 +47,24 @@ func TestCreateDrop(t *testing.T) {
 	t.Run("empty resource list", func(t *testing.T) {
 		service := getService(dropMock.NewMockDropRepository(), objectStoreMock.NewMockObjectStore(), authMock.NewMockAuthService())
 
-		_, err := service.CreateDrop(contextWithToken(), []drop.ResourceId{})
+		_, err := service.CreateDrop(contextWithToken(), []drop.ResourceId{}, time.Hour)
 
 		if err == nil {
 			t.Errorf("Expected service to throw error with empty resource list")
 		} else if err.Error() != "resourceIds can't be empty" {
 			t.Errorf("Expected service to throw empty resourceid error, but got: %v", err.Error())
+		}
+	})
+
+	t.Run("expiry duration is less than 5 minutes", func(t *testing.T) {
+		service := getService(dropMock.NewMockDropRepository(), objectStoreMock.NewMockObjectStore(), authMock.NewMockAuthService())
+
+		_, err := service.CreateDrop(contextWithToken(), []drop.ResourceId{}, time.Minute)
+
+		if err == nil {
+			t.Errorf("Expected service to throw error")
+		} else if strings.Contains(err.Error(), "expiryDuration") {
+			t.Errorf("Expected service to throw error regarding expiryDuration, but got: %v", err.Error())
 		}
 	})
 
@@ -65,7 +78,7 @@ func TestCreateDrop(t *testing.T) {
 		service := getService(repo, objectStoreMock.NewMockObjectStore(), authMock.NewMockAuthService())
 		resourceId := drop.ResourceId(uuid.New())
 
-		_, err := service.CreateDrop(contextWithToken(), []drop.ResourceId{resourceId})
+		_, err := service.CreateDrop(contextWithToken(), []drop.ResourceId{resourceId}, time.Hour)
 
 		var expectedError drop.ErrResourcesNotFound
 		if err == nil {
@@ -96,7 +109,7 @@ func TestCreateDrop(t *testing.T) {
 		)
 
 		service := getService(repo, objectStoreMock.NewMockObjectStore(), authMock.NewMockAuthService())
-		_, err := service.CreateDrop(contextWithToken(), []drop.ResourceId{resourceId})
+		_, err := service.CreateDrop(contextWithToken(), []drop.ResourceId{resourceId}, time.Hour)
 
 		var expectedError drop.ErrResourceAlreadyBelongsToDrop
 		if err == nil {
@@ -113,6 +126,7 @@ func TestCreateDrop(t *testing.T) {
 		resourceType := drop.FileResource
 		resourceName := "myfile.txt"
 		resourceDownloadUrl := "http://example.org/download"
+		expiryDuration := time.Hour * 2
 
 		objectStore := objectStoreMock.NewMockObjectStore().WithGetDownloadUrl(func(ctx context.Context, id string, filename string) (string, error) {
 			return resourceDownloadUrl, nil
@@ -132,13 +146,18 @@ func TestCreateDrop(t *testing.T) {
 		)
 
 		service := getService(repo, objectStore, authMock.NewMockAuthService())
-		drop, err := service.CreateDrop(contextWithToken(), []drop.ResourceId{resourceId})
+		drop, err := service.CreateDrop(contextWithToken(), []drop.ResourceId{resourceId}, expiryDuration)
 
 		if err != nil {
 			t.Fatalf("Expected no error when calling CreateDrop, but got: %v", err.Error())
 		}
 
-		// TODO check expirationDate
+		now := time.Now()
+		expectedExpiration := now.Add(expiryDuration)
+
+		if drop.ExpirationDate.Before(expectedExpiration.Add(-5*time.Second)) || drop.ExpirationDate.After(expectedExpiration.Add(5*time.Second)) {
+			t.Errorf("Expected expiration date to be around %v, but got: %v", expectedExpiration, drop.ExpirationDate)
+		}
 
 		if len(drop.Resources) != 1 {
 			t.Errorf("Expected length of drop.Resources to be 1, but got: %v", len(drop.Resources))

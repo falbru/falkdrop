@@ -12,6 +12,7 @@ import (
 	"github.com/falbru/falkdrop/internal/app/auth"
 	"github.com/falbru/falkdrop/internal/app/drop"
 	"github.com/google/uuid"
+	"github.com/sosodev/duration"
 )
 
 type DropHandler struct {
@@ -31,7 +32,8 @@ type DropWithResourceDownloadUrlsDTO struct {
 }
 
 type CreateDropRequest struct {
-	ResourceIds []uuid.UUID `json:"resource_ids"`
+	ResourceIds    []uuid.UUID `json:"resource_ids"`
+	ExpiryDuration string      `json:"expiry_duration"`
 }
 
 func (handler DropHandler) Get(w http.ResponseWriter, r *http.Request) error {
@@ -94,6 +96,17 @@ func (handler DropHandler) Create(w http.ResponseWriter, r *http.Request) error 
 		return httperror.New(http.StatusBadRequest, "resourceIds is empty")
 	}
 
+	if req.ExpiryDuration == "" {
+		return httperror.New(http.StatusBadRequest, "expiryDuration is required")
+	}
+
+	parsedDuration, err := duration.Parse(req.ExpiryDuration)
+	if err != nil {
+		return httperror.New(http.StatusBadRequest, fmt.Sprintf("invalid expiryDuration: %s", err.Error()))
+	}
+
+	expiryDuration := parsedDuration.ToTimeDuration()
+
 	resourceIds := make([]drop.ResourceId, len(req.ResourceIds))
 	for i, resourceId := range req.ResourceIds {
 		resourceIds[i] = drop.ResourceId(resourceId)
@@ -107,7 +120,7 @@ func (handler DropHandler) Create(w http.ResponseWriter, r *http.Request) error 
 
 	ctx := context.WithValue(context.Background(), "token", token)
 
-	drp, err := handler.dropService.CreateDrop(ctx, resourceIds)
+	drp, err := handler.dropService.CreateDrop(ctx, resourceIds, expiryDuration)
 	if err != nil {
 		var errResourcesNotFound drop.ErrResourcesNotFound
 		var errResourceAlreadyBelongsToDrop drop.ErrResourceAlreadyBelongsToDrop
