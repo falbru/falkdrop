@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
+import { useMutationState } from "@tanstack/react-query";
 import { Button } from "../components/ui/button";
 import { ItemGroup } from "../components/ui/item";
 import { useAuthenticatedMutation } from "../features/auth/hooks";
@@ -9,6 +10,7 @@ import createDrop, {
 import createAndUploadResource from "../features/drop/api/createAndUploadResource";
 import ResourceDropZone from "../features/drop/components/ResourceDropZone";
 import ResourceItem from "../features/drop/components/ResourceItem";
+import PendingResourceItem from "../features/drop/components/PendingResourceItem";
 import type {
   DropWithDownloadableResources,
   LocalResource,
@@ -31,6 +33,7 @@ const CreateDropPage = () => {
     unknown,
     Error
   >({
+    mutationKey: ["createResource"],
     mutationFn: createAndUploadResource,
     onSuccess: (uploadedResource: Resource) => {
       setUploadedResources([...uploadedResources, uploadedResource]);
@@ -38,6 +41,10 @@ const CreateDropPage = () => {
     onError: (error: Error) => {
       toast.error(error.message || "Failed to upload resource");
     },
+  });
+
+  const pendingResources = useMutationState({
+    filters: { mutationKey: ["createResource"], status: "pending" },
   });
 
   const handleSetExpiryDuration = (duration: Duration) => {
@@ -71,17 +78,17 @@ const CreateDropPage = () => {
     });
   };
 
-  const isLoading =
-    createResourceMutation.isPending || createDropMutation.isPending;
-
   return (
     <div className="flex flex-col gap-8 items-stretch">
       <ResourceDropZone onDrop={handleOnDrop} />
 
-      {uploadedResources.length > 0 && (
+      {(uploadedResources.length > 0 || pendingResources.length > 0) && (
         <ItemGroup title="Files">
           {uploadedResources.map((res) => (
             <ResourceItem key={res.id} name={res.name ?? res.id} />
+          ))}
+          {pendingResources.map((_, index) => (
+            <PendingResourceItem key={index} />
           ))}
         </ItemGroup>
       )}
@@ -95,9 +102,11 @@ const CreateDropPage = () => {
         <Button
           onClick={handleCreateDrop}
           variant="default"
-          isDisabled={uploadedResources.length === 0 || isLoading}
+          isDisabled={
+            uploadedResources.length === 0 || createDropMutation.isPending
+          }
         >
-          {isLoading ? (
+          {createDropMutation.isPending ? (
             "Creating..."
           ) : (
             <>
