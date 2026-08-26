@@ -54,6 +54,9 @@ jobs:
         uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
         with:
           images: ${{ env.REGISTRY }}/${{ github.repository }}/${{ env.IMAGE_NAME_SERVER }}
+          flavor: latest=true
+          tags: |
+            type=sha
 
       - name: Build and push Docker image
         id: push
@@ -106,6 +109,9 @@ jobs:
         uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
         with:
           images: ${{ env.REGISTRY }}/${{ github.repository }}/${{ env.IMAGE_NAME_WEBAPP }}
+          flavor: latest=true
+          tags: |
+            type=sha
 
       - name: Build and push Docker image
         id: push
