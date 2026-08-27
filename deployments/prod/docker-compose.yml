@@ -10,9 +10,20 @@ services:
       - "5433:5432"
     volumes:
       - falkdrop_db_data:/var/lib/postgresql/
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER}", "-d", "${POSTGRES_DB}"]
+
+  falkdrop-migrate:
+    image: ghcr.io/falbru/falkdrop-server:latest
+    command: ["/migrate", "up"]
+    environment:
+      - DATABASE_URL
+    depends_on:
+      falkdrop-db:
+        condition: service_healthy
 
   falkdrop-server:
-    image: ghcr.io/falbru/falkdrop-server:88cddf2
+    image: ghcr.io/falbru/falkdrop-server:latest
     restart: always
     environment:
       - DATABASE_URL
@@ -26,11 +37,15 @@ services:
     ports:
       - "8082:8082"
     depends_on:
-      - falkdrop-db
-      - keycloak
+      falkdrop-db:
+        condition: service_healthy
+      falkdrop-migrate:
+        condition: service_completed_successfully
+      keycloak:
+        condition: service_started
 
   falkdrop-webapp:
-    image: ghcr.io/falbru/falkdrop-webapp:88cddf2
+    image: ghcr.io/falbru/falkdrop-webapp:latest
     restart: always
     environment:
       - VITE_API_URL
