@@ -1,8 +1,10 @@
+import Title from "@/components/shared/Title";
 import { LinkButton } from "@/components/ui/button";
 
 const NotFoundPage = () => {
   return (
     <div className="flex flex-col items-center text-center">
+      <Title>404 Not Found</Title>
       <h1 className="font-(family-name:--font-title) text-6xl font-bold mb-4 uppercase">
         404
       </h1>

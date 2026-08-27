@@ -22,6 +22,7 @@ import ExpiryDurationSelect, {
   type Duration,
 } from "@/features/drop/components/ExpiryDurationSelect";
 import { Label } from "@/components/ui/label";
+import Title from "@/components/shared/Title";
 
 const CreateDropPage = () => {
   const [uploadedResources, setUploadedResources] = useState<Resource[]>([]);
@@ -80,6 +81,8 @@ const CreateDropPage = () => {
 
   return (
     <div className="flex flex-col gap-8 items-stretch">
+      <Title>Create Drop</Title>
+
       <ResourceDropZone onDrop={handleOnDrop} />
 
       {(uploadedResources.length > 0 || pendingResources.length > 0) && (

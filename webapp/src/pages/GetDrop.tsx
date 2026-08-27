@@ -1,6 +1,7 @@
 import { useParams } from "react-router";
 import { Button } from "../components/ui/button";
 import { ItemGroup } from "../components/ui/item";
+import Title from "../components/shared/Title";
 import ResourceItem from "../features/drop/components/ResourceItem";
 import DropNotFound from "../features/drop/components/DropNotFound";
 import useDrop from "../features/drop/hooks/useGetDrop";
@@ -102,6 +103,8 @@ const GetDropPage = () => {
 
   return (
     <div className="flex flex-col gap-8">
+      <Title>{drop.data.id}</Title>
+
       <h1 className="font-(family-name:--font-title) text-8xl font-bold text-center text-text uppercase">
         {drop.data.id}
       </h1>
