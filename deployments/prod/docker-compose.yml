@@ -17,7 +17,7 @@ services:
       retries: 5
 
   falkdrop-migrate:
-    image: ghcr.io/falbru/falkdrop-server:latest
+    image: ghcr.io/falbru/falkdrop/falkdrop-server:latest
     command: ["/migrate", "up"]
     environment:
       - DATABASE_URL
@@ -26,7 +26,7 @@ services:
         condition: service_healthy
 
   falkdrop-server:
-    image: ghcr.io/falbru/falkdrop-server:latest
+    image: ghcr.io/falbru/falkdrop/falkdrop-server:latest
     restart: always
     environment:
       - AWS_ACCESS_KEY_ID
@@ -49,7 +49,7 @@ services:
         condition: service_healthy
 
   falkdrop-webapp:
-    image: ghcr.io/falbru/falkdrop-webapp:latest
+    image: ghcr.io/falbru/falkdrop/falkdrop-webapp:latest
     restart: always
     environment:
       - VITE_API_URL
