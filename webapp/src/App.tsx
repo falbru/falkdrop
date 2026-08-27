@@ -3,7 +3,7 @@ import router from "./routes";
 import { RouterProvider } from "react-router/dom";
 import { AuthProvider } from "./features/auth/contexts/AuthProvider";
 import { createKeycloakAuthProvider } from "./features/auth/providers/keycloak";
-import { ThemeProvider } from "./components/shared/theme-provider";
+import { ThemeProvider } from "./components/shared/ThemeProvider";
 import { Toaster } from "./components/ui/sonner";
 
 const queryClient = new QueryClient();
