@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/falbru/falkdrop/internal/api/handlers"
 	"github.com/falbru/falkdrop/internal/api/middleware"
@@ -102,7 +103,12 @@ func main() {
 	mux.HandleFunc("POST /drop", middleware.ErrorHandler(dropHandler.Create))
 	mux.HandleFunc("GET /drop/{dropId}", middleware.ErrorHandler(dropHandler.Get))
 
-	c := cors.AllowAll()
+	allowedOrigins := strings.Split(os.Getenv("CORS_ALLOWED_ORIGINS"), ",")
+	c := cors.New(cors.Options{
+		AllowedOrigins: allowedOrigins,
+		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders: []string{"Authorization", "Content-Type"},
+	})
 
 	l, err := net.Listen("tcp", ":8082")
 	if err != nil {
