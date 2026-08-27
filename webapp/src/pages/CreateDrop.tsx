@@ -103,7 +103,9 @@ const CreateDropPage = () => {
           onClick={handleCreateDrop}
           variant="default"
           isDisabled={
-            uploadedResources.length === 0 || createDropMutation.isPending
+            uploadedResources.length === 0 ||
+            createDropMutation.isPending ||
+            createResourceMutation.isPending
           }
         >
           {createDropMutation.isPending ? (
