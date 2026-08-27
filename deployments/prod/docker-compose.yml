@@ -9,9 +9,12 @@ services:
     ports:
       - "5433:5432"
     volumes:
-      - falkdrop_db_data:/var/lib/postgresql/
+      - falkdrop_db_data:/var/lib/postgresql/data/
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER}", "-d", "${POSTGRES_DB}"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   falkdrop-migrate:
     image: ghcr.io/falbru/falkdrop-server:latest
@@ -26,14 +29,15 @@ services:
     image: ghcr.io/falbru/falkdrop-server:latest
     restart: always
     environment:
+      - AWS_ACCESS_KEY_ID
+      - AWS_DEFAULT_REGION
+      - AWS_SECRET_ACCESS_KEY
+      - CORS_ALLOWED_ORIGINS
       - DATABASE_URL
+      - KEYCLOAK_CLIENT_ID
+      - KEYCLOAK_REALM_URL
       - OBJECTSTORE_PROVIDER
       - S3_BUCKET
-      - AWS_DEFAULT_REGION
-      - AWS_ACCESS_KEY_ID
-      - AWS_SECRET_ACCESS_KEY
-      - KEYCLOAK_REALM_URL
-      - KEYCLOAK_CLIENT_ID
     ports:
       - "8082:8082"
     depends_on:
@@ -42,7 +46,7 @@ services:
       falkdrop-migrate:
         condition: service_completed_successfully
       keycloak:
-        condition: service_started
+        condition: service_healthy
 
   falkdrop-webapp:
     image: ghcr.io/falbru/falkdrop-webapp:latest
@@ -52,7 +56,8 @@ services:
     ports:
       - "5173:80"
     depends_on:
-      - keycloak
+      keycloak:
+        condition: service_healthy
 
   keycloak:
     image: quay.io/keycloak/keycloak:26.6.4
@@ -74,8 +79,21 @@ services:
     restart: unless-stopped
     volumes:
       - keycloak_data:/opt/keycloak/data/
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - |
+          set -e
+          exec 3<>/dev/tcp/localhost/9000
+          echo -e 'GET /health/live HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3
+          timeout 2 | grep -E '"status"[[:space:]]*:[[:space:]]*"UP"' <&3
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
     depends_on:
-      - keycloak-db
+      keycloak-db:
+        condition: service_healthy
 
   keycloak-db:
     image: postgres:16-alpine
@@ -87,7 +105,12 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - keycloak_db_data:/var/lib/postgresql/
+      - keycloak_db_data:/var/lib/postgresql/data/
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${KC_DB_USERNAME} -d keycloak"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
 volumes:
   falkdrop_db_data:

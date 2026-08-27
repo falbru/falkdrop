@@ -9,7 +9,8 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/
+      - postgres_data:/var/lib/postgresql/data
+
   garage:
     image: dxflrs/garage:v2.3.0
     environment:
@@ -26,6 +27,7 @@ services:
       - "3903:3903"
     volumes:
       - ./garage.toml:/etc/garage.toml
+
   keycloak:
     image: quay.io/keycloak/keycloak:26.6.4
     environment:
