@@ -19,11 +19,6 @@ export function createKeycloakAuthProvider(): AuthProvider {
               : undefined,
         })
         .then((authenticated) => {
-          if (authenticated) {
-            console.log("User is authenticated");
-          } else {
-            console.log("User is not authenticated");
-          }
           return authenticated;
         })
         .catch((error: unknown) => {
