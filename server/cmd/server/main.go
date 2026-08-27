@@ -17,11 +17,18 @@ import (
 	"github.com/falbru/falkdrop/internal/storage/objectstore/s3"
 	"github.com/falbru/falkdrop/internal/storage/repository/postgres"
 	"github.com/go-co-op/gocron/v2"
+	"github.com/joho/godotenv"
 
 	"github.com/rs/cors"
 )
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: Could not load environment variables from .env file: %s\n", err.Error())
+		os.Exit(1)
+	}
+
 	repository, err := postgres.NewPostgresRepository(context.Background(), os.Getenv("DATABASE_URL"))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: Could not connect to database: %s\n", err.Error())

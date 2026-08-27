@@ -7,6 +7,7 @@ import (
 
 	"github.com/falbru/falkdrop/pkg/migrations"
 	"github.com/jackc/pgx/v5"
+	"github.com/joho/godotenv"
 )
 
 func printHelp() {
@@ -20,6 +21,12 @@ Commands:
 const MIGRATIONS_DIRECTORY = "migrations/"
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: Could not load environment variables from .env file: %s\n", err.Error())
+		os.Exit(1)
+	}
+
 	args := os.Args[1:]
 
 	if len(args) == 0 || (args[0] != "check" && args[0] != "up") {

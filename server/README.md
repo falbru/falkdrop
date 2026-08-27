@@ -16,11 +16,11 @@ $EDITOR .env
 2. Migrate the database
 
 ```sh
-source .env && go run cmd/migrate/main.go up
+go run cmd/migrate/main.go up
 ```
 
 3. Run the server
 
 ```sh
-source .env && go run cmd/server/main.go
+go run cmd/server/main.go
 ```
