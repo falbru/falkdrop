@@ -21,10 +21,11 @@ Commands:
 const MIGRATIONS_DIRECTORY = "migrations/"
 
 func main() {
-	err := godotenv.Load()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: Could not load environment variables from .env file: %s\n", err.Error())
-		os.Exit(1)
+	if _, err := os.Stat(".env"); err == nil {
+		if err := godotenv.Load(".env"); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: Could not load environment variables from .env file: %s\n", err.Error())
+			os.Exit(1)
+		}
 	}
 
 	args := os.Args[1:]
