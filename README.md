@@ -4,11 +4,11 @@ Send and receive files across devices
 
 ## Features
 
-- Upload files or clipboard to a drop which can be shared with a link
+- Upload files or clipboard to a drop generated with a unique code
 
-- Download a drop using a code, link or QR code
+- Download resources from a drop using the drop code, link or QR code
 
-- Drops expire after a certain time period
+- Drops expire after a specified time period
 
 - Authentication and authorization to ensure only authorized users can create drops
 
